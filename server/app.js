@@ -16,10 +16,19 @@ export const createApp = () => {
   const app = express();
   const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-  // Security Middlewares
+  // Security Middlewares - Permissive CORS in development
   app.use(cors({
-    origin: [FRONTEND_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
-    credentials: true
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, Postman) or any localhost/127.0.0.1 port
+      if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Permissive for hackathon dev environment
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
   }));
 
   app.use(express.json());
@@ -108,3 +117,4 @@ export const seedDefaultAccounts = async () => {
     saveDb(db);
   }
 };
+
