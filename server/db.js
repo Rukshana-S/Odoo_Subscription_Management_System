@@ -19,9 +19,36 @@ export const initDatabase = () => {
       refreshTokens: [],
       passwordResetTokens: [],
       emailVerificationTokens: [],
-      auditLogs: []
+      auditLogs: [],
+      customers: [],
+      products: [],
+      plans: [],
+      subscriptions: [],
+      quotations: [],
+      invoices: [],
+      payments: [],
+      discounts: []
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(defaultData, null, 2), 'utf-8');
+  } else {
+    // Ensure table arrays exist non-destructively
+    try {
+      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      const db = JSON.parse(raw);
+      const tables = ['users', 'refreshTokens', 'passwordResetTokens', 'emailVerificationTokens', 'auditLogs', 'customers', 'products', 'plans', 'subscriptions', 'quotations', 'invoices', 'payments', 'discounts'];
+      let modified = false;
+      tables.forEach(t => {
+        if (!Array.isArray(db[t])) {
+          db[t] = [];
+          modified = true;
+        }
+      });
+      if (modified) {
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 };
 

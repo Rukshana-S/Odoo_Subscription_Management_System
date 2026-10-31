@@ -10,6 +10,15 @@ import bcrypt from 'bcryptjs';
 import { initDatabase, getDb, saveDb } from './db.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
+import customerRoutes from './routes/customers.js';
+import productRoutes from './routes/products.js';
+import planRoutes from './routes/plans.js';
+import subscriptionRoutes from './routes/subscriptions.js';
+import quotationRoutes from './routes/quotations.js';
+import invoiceRoutes from './routes/invoices.js';
+import paymentRoutes from './routes/payments.js';
+import discountRoutes from './routes/discounts.js';
+import reportRoutes from './routes/reports.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 export const createApp = () => {
@@ -45,6 +54,16 @@ export const createApp = () => {
 
   app.use('/api/auth', authLimiter, authRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/customers', customerRoutes);
+  app.use('/api/products', productRoutes);
+  app.use('/api/plans', planRoutes);
+  app.use('/api/subscriptions', subscriptionRoutes);
+  app.use('/api/quotations', quotationRoutes);
+  app.use('/api/invoices', invoiceRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use('/api/discounts', discountRoutes);
+  app.use('/api/reports', reportRoutes);
+  app.use('/api/dashboard', reportRoutes);
 
   // Healthcheck
   app.get('/api/health', (req, res) => {

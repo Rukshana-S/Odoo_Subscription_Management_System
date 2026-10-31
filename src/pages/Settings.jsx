@@ -260,20 +260,28 @@ export const Settings = () => {
         </form>
       </div>
 
-      {/* Backend API Service Health Status */}
+      {/* Security Best Practices & Policies */}
       <div className="glass-card rounded-3xl p-6 border border-white/10 shadow-xl space-y-3">
         <h3 className="text-base font-bold text-white flex items-center gap-2">
-          <Database size={18} className="text-emerald-400" />
-          <span>Backend API Architecture Status</span>
+          <Shield size={18} className="text-emerald-400" />
+          <span>Account Security & Session Policy</span>
         </h3>
         <p className="text-xs text-bright-textMuted">
-          Connected to local Express server running on port 5000.
+          BrightLoop secures your account with bcrypt cryptographic hashing, HTTP-only refresh tokens, and automated session invalidation on password change.
         </p>
-        <div className="p-3.5 rounded-2xl bg-black/30 border border-white/5 font-mono text-xs space-y-1 text-purple-200">
-          <div>VITE_API_URL: <span className="text-white">http://localhost:5000/api</span></div>
-          <div>Change Password API: <span className="text-emerald-400 font-bold">PATCH /api/auth/change-password (Active)</span></div>
-          <div>Profile API: <span className="text-emerald-400 font-bold">PUT /api/auth/profile (Active)</span></div>
-          <div>Automated Test Suite: <span className="text-[#f2c400]">36 Tests Passed (Jest + Supertest)</span></div>
+        <div className="p-3.5 rounded-2xl bg-black/30 border border-white/5 text-xs space-y-1.5 text-purple-200">
+          <div className="flex items-center gap-2">
+            <Check size={14} className="text-emerald-400" />
+            <span>Role-Based Access Control enforced on all endpoints</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Check size={14} className="text-emerald-400" />
+            <span>Cryptographic token rotation and automatic session expiration</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Check size={14} className="text-emerald-400" />
+            <span>Rate-limited authentication gateways to prevent brute-force attacks</span>
+          </div>
         </div>
       </div>
     </div>
