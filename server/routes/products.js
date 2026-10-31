@@ -1,167 +1,204 @@
 import express from 'express';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/products - List all products
-router.get('/', (req, res, next) => {
+// GET /api/products
+router.get('/', async (req, res, next) => {
   try {
-    const db = getDb();
-    let products = db.products || [];
+    const pool = getPool();
+    let sql = 'SELECT * FROM products WHERE 1=1';
+    const params = [];
 
     const { search, category, status } = req.query;
     if (search) {
-      const q = search.toLowerCase();
-      products = products.filter(p => 
-        (p.name && p.name.toLowerCase().includes(q)) ||
-        (p.description && p.description.toLowerCase().includes(q))
-      );
+      params.push(`%${search.toLowerCase()}%`);
+      sql += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(description) LIKE $${params.length})`;
     }
-    if (category && category !== 'all') {
-      products = products.filter(p => p.category && p.category.toLowerCase() === category.toLowerCase());
+    if (category && category !== 'all' && category !== 'All') {
+      params.push(category);
+      sql += ` AND category = $${params.length}`;
     }
     if (status && status !== 'all') {
-      products = products.filter(p => p.status && p.status.toLowerCase() === status.toLowerCase());
+      const isActive = status === 'Active';
+      params.push(isActive);
+      sql += ` AND is_active = $${params.length}`;
     }
 
-    res.json({ success: true, count: products.length, data: products });
+    sql += ' ORDER BY created_at DESC';
+    const { rows } = await pool.query(sql, params);
+
+    const formatted = rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      category: r.category,
+      price: Number(r.price),
+      salesPrice: Number(r.price),
+      costPrice: Number(r.cost_price || 0),
+      gst_rate: Number(r.gst_rate || 18),
+      billingInterval: r.billing_interval,
+      features: r.features || [],
+      status: r.is_active ? 'Active' : 'Inactive',
+      is_active: r.is_active
+    }));
+
+    res.json({ success: true, count: formatted.length, data: formatted });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/products/:id - Single product
-router.get('/:id', (req, res, next) => {
+// GET /api/products/:id
+router.get('/:id', async (req, res, next) => {
   try {
-    const db = getDb();
-    const product = (db.products || []).find(p => p.id === req.params.id);
-    if (!product) {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
-    res.json({ success: true, data: product });
+    const r = rows[0];
+    res.json({
+      success: true,
+      data: {
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        category: r.category,
+        price: Number(r.price),
+        salesPrice: Number(r.price),
+        costPrice: Number(r.cost_price || 0),
+        status: r.is_active ? 'Active' : 'Inactive',
+        features: r.features || []
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/products - Create product (Admin, Staff)
-router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
+// POST /api/products
+router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
   try {
-    const { name, category, price, billingInterval, description, status } = req.body;
+    const { name, category, price, salesPrice, costPrice, billingInterval, description, status, features } = req.body;
+    const resolvedPrice = Number(price !== undefined ? price : salesPrice);
 
-    if (!name || price === undefined) {
-      return res.status(400).json({ success: false, message: 'Product name and price are required.' });
+    if (!name || isNaN(resolvedPrice) || resolvedPrice < 0) {
+      return res.status(400).json({ success: false, message: 'Valid product name and non-negative price are required.' });
     }
 
-    const numPrice = Number(price);
-    if (isNaN(numPrice) || numPrice < 0) {
-      return res.status(400).json({ success: false, message: 'Price must be a valid non-negative number.' });
-    }
+    const pool = getPool();
+    const id = `PROD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const isActive = status !== 'Inactive';
 
-    const db = getDb();
-    db.products = db.products || [];
+    const { rows } = await pool.query(`
+      INSERT INTO products (id, name, description, category, price, cost_price, gst_rate, billing_interval, features, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, 18.00, $7, $8, $9, NOW(), NOW())
+      RETURNING *;
+    `, [
+      id,
+      name.trim(),
+      description || '',
+      category || 'Enterprise SaaS',
+      resolvedPrice,
+      Number(costPrice) || 0,
+      billingInterval || 'Monthly',
+      JSON.stringify(features || []),
+      isActive
+    ]);
 
-    const newProduct = {
-      id: `PROD-${String(db.products.length + 1).padStart(3, '0')}`,
-      name: name.trim(),
-      category: category || 'SaaS',
-      price: numPrice,
-      billingInterval: billingInterval || 'Monthly',
-      description: description || '',
-      status: status || 'Active',
-      features: req.body.features || [],
-      createdAt: new Date().toISOString()
-    };
-
-    db.products.push(newProduct);
-    saveDb(db);
-
-    logAudit({
+    const r = rows[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'PRODUCT_CREATED',
-      details: { productId: newProduct.id, name: newProduct.name },
-      ip: req.ip
+      entityType: 'PRODUCT',
+      entityId: r.id,
+      details: { name: r.name, price: r.price }
     });
 
-    res.status(201).json({ success: true, message: 'Product created successfully.', data: newProduct });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PUT /api/products/:id - Update product (Admin, Staff)
-router.put('/:id', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
-  try {
-    const db = getDb();
-    const index = (db.products || []).findIndex(p => p.id === req.params.id);
-
-    if (index === -1) {
-      return res.status(404).json({ success: false, message: 'Product not found.' });
-    }
-
-    const { name, category, price, billingInterval, description, status, features } = req.body;
-    const product = db.products[index];
-
-    if (name) product.name = name.trim();
-    if (category) product.category = category.trim();
-    if (price !== undefined) {
-      const numPrice = Number(price);
-      if (isNaN(numPrice) || numPrice < 0) {
-        return res.status(400).json({ success: false, message: 'Invalid price value.' });
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully in PostgreSQL.',
+      data: {
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        price: Number(r.price),
+        salesPrice: Number(r.price),
+        costPrice: Number(r.cost_price),
+        status: r.is_active ? 'Active' : 'Inactive'
       }
-      product.price = numPrice;
-    }
-    if (billingInterval) product.billingInterval = billingInterval;
-    if (description !== undefined) product.description = description;
-    if (status) product.status = status;
-    if (features) product.features = features;
-
-    product.updatedAt = new Date().toISOString();
-    db.products[index] = product;
-    saveDb(db);
-
-    logAudit({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'PRODUCT_UPDATED',
-      details: { productId: product.id },
-      ip: req.ip
     });
-
-    res.json({ success: true, message: 'Product updated successfully.', data: product });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/products/:id - Admin only
-router.delete('/:id', requireAuth, requireRoles(['Admin']), (req, res, next) => {
+// PUT /api/products/:id
+router.put('/:id', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
   try {
-    const db = getDb();
-    const index = (db.products || []).findIndex(p => p.id === req.params.id);
+    const { name, category, price, salesPrice, costPrice, billingInterval, description, status, features } = req.body;
+    const pool = getPool();
 
-    if (index === -1) {
+    const { rows: existing } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
-    const removed = db.products.splice(index, 1)[0];
-    saveDb(db);
+    const cur = existing[0];
+    const resolvedPrice = (price !== undefined || salesPrice !== undefined) ? Number(price !== undefined ? price : salesPrice) : Number(cur.price);
+    const isActive = status !== undefined ? status === 'Active' : cur.is_active;
 
-    logAudit({
-      userId: req.user.id,
-      email: req.user.email,
-      action: 'PRODUCT_DELETED',
-      details: { productId: removed.id, name: removed.name },
-      ip: req.ip
+    const { rows: updated } = await pool.query(`
+      UPDATE products
+      SET name = $1, category = $2, price = $3, cost_price = $4, billing_interval = $5, description = $6, is_active = $7, features = $8, updated_at = NOW()
+      WHERE id = $9
+      RETURNING *;
+    `, [
+      name ? name.trim() : cur.name,
+      category ? category.trim() : cur.category,
+      resolvedPrice,
+      costPrice !== undefined ? Number(costPrice) : cur.cost_price,
+      billingInterval || cur.billing_interval,
+      description !== undefined ? description : cur.description,
+      isActive,
+      features ? JSON.stringify(features) : cur.features,
+      cur.id
+    ]);
+
+    const r = updated[0];
+    res.json({
+      success: true,
+      message: 'Product updated successfully.',
+      data: {
+        id: r.id,
+        name: r.name,
+        price: Number(r.price),
+        salesPrice: Number(r.price),
+        category: r.category,
+        status: r.is_active ? 'Active' : 'Inactive'
+      }
     });
+  } catch (err) {
+    next(err);
+  }
+});
 
-    res.json({ success: true, message: 'Product deleted successfully.', data: removed });
+// DELETE /api/products/:id
+router.delete('/:id', requireAuth, requireRoles(['Admin']), async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const { rows } = await pool.query('DELETE FROM products WHERE id = $1 RETURNING *', [req.params.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Product not found.' });
+    }
+    res.json({ success: true, message: 'Product deleted from PostgreSQL.', data: rows[0] });
   } catch (err) {
     next(err);
   }
 });
 
 export default router;
-

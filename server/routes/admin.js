@@ -1,83 +1,96 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Only Admin can create staff accounts
-router.post('/staff', requireAuth, requireRoles(['Admin']), async (req, res) => {
+// POST /api/admin/staff - Provision staff or admin accounts
+router.post('/staff', requireAuth, requireRoles(['Admin']), async (req, res, next) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, password, role = 'Staff', phone } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Name, email, and temporary password are required.' });
+      return res.status(400).json({ success: false, message: 'Full name, email, and password are required.' });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const db = getDb();
-
-    if (db.users.some(u => u.email.toLowerCase() === normalizedEmail)) {
-      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+    if (!['Staff', 'Admin'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Admin can only provision Staff or Admin roles.' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const pool = getPool();
+    const cleanEmail = email.toLowerCase().trim();
 
-    const newStaff = {
-      id: `STAFF-${Date.now()}`,
-      name: name.trim().split(' ')[0],
-      fullName: name.trim(),
-      email: normalizedEmail,
-      phone: phone || '',
-      passwordHash,
-      role: 'Staff',
-      customerId: null,
-      emailVerified: true,
-      accountStatus: 'Active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastLoginAt: null
-    };
+    const { rows: dup } = await pool.query('SELECT id FROM users WHERE email = $1', [cleanEmail]);
+    if (dup.length > 0) {
+      return res.status(409).json({ success: false, message: 'An account with this email address already exists.' });
+    }
 
-    db.users.push(newStaff);
-    saveDb(db);
+    const passwordHash = await bcrypt.hash(password, 10);
+    const userId = `USER-${role.toUpperCase()}-${Date.now()}`;
 
-    logAudit({
+    const { rows: inserted } = await pool.query(`
+      INSERT INTO users (id, first_name, last_name, email, password_hash, role, token_version, is_active, email_verified, created_at, updated_at)
+      VALUES ($1, $2, '', $3, $4, $5, 1, true, true, NOW(), NOW())
+      RETURNING id, first_name, email, role, is_active, created_at;
+    `, [userId, name.trim(), cleanEmail, passwordHash, role]);
+
+    const u = inserted[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
-      action: 'STAFF_PROVISIONED',
-      details: { staffEmail: newStaff.email },
-      ip: req.ip
+      action: 'ADMIN_PROVISIONED_USER',
+      entityType: 'USER',
+      entityId: u.id,
+      details: { role: u.role, email: u.email }
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: `Staff member ${newStaff.name} created successfully.`,
-      staff: {
-        id: newStaff.id,
-        name: newStaff.name,
-        email: newStaff.email,
-        role: newStaff.role
+      message: `${role} account provisioned successfully.`,
+      user: {
+        id: u.id,
+        name: u.first_name,
+        email: u.email,
+        role: u.role
       }
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Failed to create staff account.' });
+    next(err);
   }
 });
 
-// Admin list all system users
-router.get('/users', requireAuth, requireRoles(['Admin']), (req, res) => {
-  const db = getDb();
-  const safeUsers = db.users.map(({ passwordHash, ...safe }) => safe);
-  return res.status(200).json({ success: true, users: safeUsers });
+// GET /api/admin/audit-logs
+router.get('/audit-logs', requireAuth, requireRoles(['Admin']), async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 50');
+
+    res.json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-// Admin view audit logs
-router.get('/audit-logs', requireAuth, requireRoles(['Admin']), (req, res) => {
-  const db = getDb();
-  return res.status(200).json({ success: true, logs: db.auditLogs.slice(-100).reverse() });
+// GET /api/admin/users
+router.get('/users', requireAuth, requireRoles(['Admin']), async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT id, first_name as name, email, role, is_active, created_at FROM users ORDER BY created_at DESC');
+
+    res.json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;
-

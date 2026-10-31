@@ -87,3 +87,4 @@ describe('PostgreSQL Database Integration Test Suite', () => {
     expect(statuses).toContain('Cancelled');
   });
 });
+

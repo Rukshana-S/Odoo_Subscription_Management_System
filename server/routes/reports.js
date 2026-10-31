@@ -1,41 +1,75 @@
 import express from 'express';
-import { getDb } from '../db.js';
-import { requireAuth, requireRoles } from '../middleware/auth.js';
+import { getPool } from '../db/pool.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/reports/dashboard - Aggregated analytics and reporting
-router.get('/dashboard', requireAuth, (req, res, next) => {
+// GET /api/reports/dashboard & /api/dashboard/stats
+router.get(['/dashboard', '/stats'], requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    let customers = db.customers || [];
-    let subscriptions = db.subscriptions || [];
-    let invoices = db.invoices || [];
-    let payments = db.payments || [];
+    const pool = getPool();
+    const isCustomer = req.user.role === 'Customer' && req.user.customerId;
+    const custId = req.user.customerId;
 
-    // Customer role scoped to personal analytics
-    if (req.user.role === 'Customer' && req.user.customerId) {
-      customers = customers.filter(c => c.id === req.user.customerId);
-      subscriptions = subscriptions.filter(s => s.customerId === req.user.customerId);
-      invoices = invoices.filter(inv => inv.customerId === req.user.customerId);
-      payments = payments.filter(p => p.customerId === req.user.customerId);
+    // 1. Total Revenue from successful payments
+    let revQuery = "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = 'Success'";
+    const revParams = [];
+    if (isCustomer) {
+      revParams.push(custId);
+      revQuery += ` AND customer_id = $${revParams.length}`;
     }
+    const { rows: revRows } = await pool.query(revQuery, revParams);
+    const totalRevenue = Number(revRows[0].total);
 
-    // Revenue calculations
-    const totalRevenue = payments
-      .filter(p => p.status === 'Success')
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    // 2. Customers Count
+    let custQuery = 'SELECT COUNT(*) as cnt FROM customers';
+    const custParams = [];
+    if (isCustomer) {
+      custParams.push(custId);
+      custQuery += ` WHERE id = $${custParams.length}`;
+    }
+    const { rows: custRows } = await pool.query(custQuery, custParams);
+    const totalCustomers = Number(custRows[0].cnt);
 
-    const activeSubscriptions = subscriptions.filter(s => s.status === 'Active').length;
-    const pausedSubscriptions = subscriptions.filter(s => s.status === 'Paused').length;
-    const cancelledSubscriptions = subscriptions.filter(s => s.status === 'Cancelled').length;
+    // 3. Subscriptions Status Breakdown
+    let subQuery = 'SELECT status, COUNT(*) as cnt FROM subscriptions';
+    const subParams = [];
+    if (isCustomer) {
+      subParams.push(custId);
+      subQuery += ` WHERE customer_id = $${subParams.length}`;
+    }
+    subQuery += ' GROUP BY status';
+    const { rows: subRows } = await pool.query(subQuery, subParams);
 
-    const pendingInvoices = invoices.filter(inv => inv.status === 'Unpaid' || inv.status === 'Partially Paid').length;
-    const overdueInvoices = invoices.filter(inv => inv.status === 'Overdue' || (inv.dueDate && new Date(inv.dueDate) < new Date() && inv.status !== 'Paid')).length;
+    let activeSubscriptions = 0;
+    let pausedSubscriptions = 0;
+    let cancelledSubscriptions = 0;
+    let totalSubscriptions = 0;
 
-    const outstandingBalance = invoices.reduce((sum, inv) => sum + (Number(inv.balance) || 0), 0);
+    subRows.forEach(r => {
+      const c = Number(r.cnt);
+      totalSubscriptions += c;
+      if (r.status === 'Active') activeSubscriptions = c;
+      if (r.status === 'Paused') pausedSubscriptions = c;
+      if (r.status === 'Cancelled') cancelledSubscriptions = c;
+    });
 
-    // Monthly breakdown
+    // 4. Invoices and Outstanding Balances
+    let invQuery = `
+      SELECT 
+        COUNT(*) as total_invoices,
+        COALESCE(SUM(balance), 0) as outstanding_balance,
+        COUNT(CASE WHEN status IN ('Unpaid', 'Partially Paid') THEN 1 END) as pending_count,
+        COUNT(CASE WHEN status = 'Overdue' OR (due_date < CURRENT_DATE AND status != 'Paid') THEN 1 END) as overdue_count
+      FROM invoices
+    `;
+    const invParams = [];
+    if (isCustomer) {
+      invParams.push(custId);
+      invQuery += ` WHERE customer_id = $${invParams.length}`;
+    }
+    const { rows: invRows } = await pool.query(invQuery, invParams);
+
     const monthlyOverview = [
       { month: 'Jan', revenue: 145000, subscriptions: 2 },
       { month: 'Feb', revenue: 182000, subscriptions: 4 },
@@ -48,17 +82,16 @@ router.get('/dashboard', requireAuth, (req, res, next) => {
     res.json({
       success: true,
       data: {
-        totalRevenue: Number(totalRevenue.toFixed(2)),
-        outstandingBalance: Number(outstandingBalance.toFixed(2)),
-        totalCustomers: customers.length,
+        totalRevenue,
+        outstandingBalance: Number(invRows[0].outstanding_balance),
+        totalCustomers,
         activeSubscriptions,
         pausedSubscriptions,
         cancelledSubscriptions,
-        totalSubscriptions: subscriptions.length,
-        pendingInvoices,
-        overdueInvoices,
-        totalInvoices: invoices.length,
-        totalPaymentsRecorded: payments.length,
+        totalSubscriptions,
+        pendingInvoices: Number(invRows[0].pending_count),
+        overdueInvoices: Number(invRows[0].overdue_count),
+        totalInvoices: Number(invRows[0].total_invoices),
         monthlyOverview
       }
     });
@@ -68,4 +101,3 @@ router.get('/dashboard', requireAuth, (req, res, next) => {
 });
 
 export default router;
-

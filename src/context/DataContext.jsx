@@ -1,5 +1,15 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  authService,
+  customerService,
+  productService,
+  planService,
+  subscriptionService,
+  quotationService,
+  invoiceService,
+  paymentService,
+  discountService
+} from '../services/api';
 import {
   initialCustomers,
   initialProducts,
@@ -12,71 +22,85 @@ import {
 } from '../data/mockData';
 
 const DataContext = createContext();
-const DATA_VERSION = 'brightloop_v3_auth';
 
 export const DataProvider = ({ children }) => {
-  const isUpToDate = localStorage.getItem('brightloop_data_version') === DATA_VERSION;
-
-  // Real Authenticated User State (Loaded from Backend /me or null)
+  // Real Authenticated User State
   const [user, setUser] = useState(() => {
     const local = localStorage.getItem('brightloop_auth_user');
     return local ? JSON.parse(local) : null;
   });
 
   const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
 
-  // Initialize data stores
-  const [customers, setCustomers] = useState(() => {
-    if (!isUpToDate) return initialCustomers;
-    const local = localStorage.getItem('brightloop_customers');
-    return local ? JSON.parse(local) : initialCustomers;
-  });
-
-  const [products, setProducts] = useState(() => {
-    if (!isUpToDate) return initialProducts;
-    const local = localStorage.getItem('brightloop_products');
-    return local ? JSON.parse(local) : initialProducts;
-  });
-
-  const [plans, setPlans] = useState(() => {
-    if (!isUpToDate) return initialPlans;
-    const local = localStorage.getItem('brightloop_plans');
-    return local ? JSON.parse(local) : initialPlans;
-  });
-
-  const [discounts, setDiscounts] = useState(() => {
-    if (!isUpToDate) return initialDiscounts;
-    const local = localStorage.getItem('brightloop_discounts');
-    return local ? JSON.parse(local) : initialDiscounts;
-  });
-
-  const [subscriptions, setSubscriptions] = useState(() => {
-    if (!isUpToDate) return initialSubscriptions;
-    const local = localStorage.getItem('brightloop_subscriptions');
-    return local ? JSON.parse(local) : initialSubscriptions;
-  });
-
-  const [quotations, setQuotations] = useState(() => {
-    if (!isUpToDate) return initialQuotations;
-    const local = localStorage.getItem('brightloop_quotations');
-    return local ? JSON.parse(local) : initialQuotations;
-  });
-
-  const [invoices, setInvoices] = useState(() => {
-    if (!isUpToDate) return initialInvoices;
-    const local = localStorage.getItem('brightloop_invoices');
-    return local ? JSON.parse(local) : initialInvoices;
-  });
-
-  const [payments, setPayments] = useState(() => {
-    if (!isUpToDate) return initialPayments;
-    const local = localStorage.getItem('brightloop_payments');
-    return local ? JSON.parse(local) : initialPayments;
-  });
+  // Application Data Stores - seeded with defaults, updated live from PostgreSQL
+  const [customers, setCustomers] = useState(initialCustomers);
+  const [products, setProducts] = useState(initialProducts);
+  const [plans, setPlans] = useState(initialPlans);
+  const [discounts, setDiscounts] = useState(initialDiscounts);
+  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
+  const [quotations, setQuotations] = useState(initialQuotations);
+  const [invoices, setInvoices] = useState(initialInvoices);
+  const [payments, setPayments] = useState(initialPayments);
 
   const [globalSearch, setGlobalSearch] = useState('');
 
-  // Synchronize with backend GET /api/auth/me on mount
+  // Fetch all live records from PostgreSQL via Express REST API
+  const refreshAllData = useCallback(async () => {
+    const token = localStorage.getItem('brightloop_token');
+    setDataLoading(true);
+
+    try {
+      // 1. Fetch public products & plans regardless of auth
+      const [prodRes, planRes] = await Promise.allSettled([
+        productService.getAll(),
+        planService.getAll()
+      ]);
+      if (prodRes.status === 'fulfilled' && prodRes.value?.data?.data) {
+        setProducts(prodRes.value.data.data);
+      }
+      if (planRes.status === 'fulfilled' && planRes.value?.data?.data) {
+        setPlans(planRes.value.data.data);
+      }
+
+      // 2. Fetch authenticated datasets if token exists
+      if (token) {
+        const [custRes, subRes, quoRes, invRes, payRes, discRes] = await Promise.allSettled([
+          customerService.getAll(),
+          subscriptionService.getAll(),
+          quotationService.getAll(),
+          invoiceService.getAll(),
+          paymentService.getAll(),
+          discountService.getAll()
+        ]);
+
+        if (custRes.status === 'fulfilled' && custRes.value?.data?.data) {
+          setCustomers(custRes.value.data.data);
+        }
+        if (subRes.status === 'fulfilled' && subRes.value?.data?.data) {
+          setSubscriptions(subRes.value.data.data);
+        }
+        if (quoRes.status === 'fulfilled' && quoRes.value?.data?.data) {
+          setQuotations(quoRes.value.data.data);
+        }
+        if (invRes.status === 'fulfilled' && invRes.value?.data?.data) {
+          setInvoices(invRes.value.data.data);
+        }
+        if (payRes.status === 'fulfilled' && payRes.value?.data?.data) {
+          setPayments(payRes.value.data.data);
+        }
+        if (discRes.status === 'fulfilled' && discRes.value?.data?.data) {
+          setDiscounts(discRes.value.data.data);
+        }
+      }
+    } catch (err) {
+      console.warn('[DATA REFRESH NOTICE] Retaining local state due to network fetch notice:', err.message);
+    } finally {
+      setDataLoading(false);
+    }
+  }, []);
+
+  // Synchronize session with backend GET /api/auth/me on mount
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -98,48 +122,12 @@ export const DataProvider = ({ children }) => {
         localStorage.removeItem('brightloop_token');
       } finally {
         setAuthLoading(false);
+        refreshAllData();
       }
     };
 
     fetchSession();
-  }, []);
-
-  // Persist current version and state
-  useEffect(() => {
-    localStorage.setItem('brightloop_data_version', DATA_VERSION);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_customers', JSON.stringify(customers));
-  }, [customers]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_plans', JSON.stringify(plans));
-  }, [plans]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_discounts', JSON.stringify(discounts));
-  }, [discounts]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_subscriptions', JSON.stringify(subscriptions));
-  }, [subscriptions]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_quotations', JSON.stringify(quotations));
-  }, [quotations]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_invoices', JSON.stringify(invoices));
-  }, [invoices]);
-
-  useEffect(() => {
-    localStorage.setItem('brightloop_payments', JSON.stringify(payments));
-  }, [payments]);
+  }, [refreshAllData]);
 
   // Real backend logout
   const logout = async () => {
@@ -155,251 +143,309 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Customer Actions
-  const addCustomer = (customer) => {
-    const newCust = {
-      ...customer,
-      id: `CUST-00${customers.length + 1}`,
-      registrationDate: new Date().toISOString().split('T')[0],
-      status: customer.status || 'Active',
-      avatar: customer.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
-    };
-    setCustomers([newCust, ...customers]);
-    return newCust;
-  };
-
-  const updateCustomer = (id, updated) => {
-    setCustomers(customers.map(c => c.id === id ? { ...c, ...updated } : c));
-  };
-
-  const deleteCustomer = (id) => {
-    setCustomers(customers.filter(c => c.id !== id));
-  };
-
-  // Product Actions
-  const addProduct = (prod) => {
-    const newProd = {
-      ...prod,
-      id: `PROD-00${products.length + 1}`,
-      salesPrice: Number(prod.salesPrice) || 0,
-      costPrice: Number(prod.costPrice) || 0,
-      variants: prod.variants && prod.variants.length > 0 ? prod.variants : [
-        { name: "Standard", additionalPrice: 0, finalPrice: Number(prod.salesPrice) || 0 }
-      ]
-    };
-    setProducts([newProd, ...products]);
-    return newProd;
-  };
-
-  const updateProduct = (id, updated) => {
-    setProducts(products.map(p => p.id === id ? { ...p, ...updated } : p));
-  };
-
-  const deleteProduct = (id) => {
-    setProducts(products.filter(p => p.id !== id));
-  };
-
-  // Plan Actions
-  const addPlan = (plan) => {
-    const newPlan = {
-      ...plan,
-      id: `PLAN-00${plans.length + 1}`,
-      price: Number(plan.price) || 0,
-      minQuantity: Number(plan.minQuantity) || 1,
-      status: plan.status || 'Active'
-    };
-    setPlans([newPlan, ...plans]);
-    return newPlan;
-  };
-
-  const updatePlan = (id, updated) => {
-    setPlans(plans.map(p => p.id === id ? { ...p, ...updated } : p));
-  };
-
-  const deletePlan = (id) => {
-    setPlans(plans.filter(p => p.id !== id));
-  };
-
-  // Subscription Actions
-  const addSubscription = (subData) => {
-    const newSub = {
-      ...subData,
-      id: `SUB-${new Date().getFullYear()}-00${subscriptions.length + 1}`,
-      status: subData.status || 'Draft',
-      taxRate: subData.taxRate || 18,
-      renewalAlert: "Active",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
-    };
-    setSubscriptions([newSub, ...subscriptions]);
-    return newSub;
-  };
-
-  const updateSubscription = (id, updated) => {
-    setSubscriptions(subscriptions.map(s => s.id === id ? { ...s, ...updated } : s));
-  };
-
-  const changeSubscriptionStatus = (id, status) => {
-    setSubscriptions(subscriptions.map(s => s.id === id ? { ...s, status } : s));
-  };
-
-  // Quotation Actions
-  const addQuotation = (quote) => {
-    const newQuote = {
-      ...quote,
-      id: `QUO-${new Date().getFullYear()}-00${quotations.length + 1}`,
-      status: quote.status || 'Draft'
-    };
-    setQuotations([newQuote, ...quotations]);
-    return newQuote;
-  };
-
-  const updateQuotation = (id, updated) => {
-    setQuotations(quotations.map(q => q.id === id ? { ...q, ...updated } : q));
-  };
-
-  // Convert Quotation into active/confirmed Subscription
-  const convertQuotationToSubscription = (quotationId) => {
-    const quote = quotations.find(q => q.id === quotationId);
-    if (!quote) return null;
-
-    const matchedPlan = plans.find(p => p.id === quote.planId) || plans[0];
-    const customer = customers.find(c => c.id === quote.customerId);
-
-    const newSub = {
-      id: `SUB-${new Date().getFullYear()}-00${subscriptions.length + 1}`,
-      customerId: quote.customerId,
-      customerName: quote.customerName || (customer ? customer.name : 'Unknown Customer'),
-      planId: quote.planId,
-      planName: quote.planName || matchedPlan.name,
-      productId: quote.items?.[0]?.productId || 'PROD-001',
-      variantName: quote.items?.[0]?.productName || 'Standard',
-      startDate: new Date().toISOString().split('T')[0],
-      expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      billingInterval: matchedPlan.billingInterval || 'Monthly',
-      quantity: 1,
-      unitPrice: quote.subtotal,
-      taxRate: 18,
-      taxAmount: quote.tax,
-      discountAmount: quote.discount || 0,
-      totalAmount: quote.total,
-      paymentTerms: "Net 15",
-      status: "Confirmed",
-      renewalAlert: "Just converted",
-      avatar: customer?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
-    };
-
-    setSubscriptions([newSub, ...subscriptions]);
-    updateQuotation(quotationId, { status: 'Accepted' });
-
-    // Auto-generate invoice
-    const newInvoice = {
-      id: `INV-${new Date().getFullYear()}-00${invoices.length + 1}`,
-      invoiceNumber: `INV-${new Date().getFullYear()}-00${invoices.length + 1}`,
-      subscriptionId: newSub.id,
-      customerId: newSub.customerId,
-      customerName: newSub.customerName,
-      customerEmail: customer?.email || "customer@chennaitech.in",
-      customerAddress: customer?.address || "Registered Address",
-      billingPeriod: `${newSub.startDate} to ${newSub.nextBillingDate}`,
-      invoiceDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      subtotal: quote.subtotal,
-      discount: quote.discount || 0,
-      taxRate: 18,
-      tax: quote.tax,
-      total: quote.total,
-      amountPaid: 0,
-      balanceDue: quote.total,
-      status: "Confirmed",
-      items: quote.items.map(it => ({
-        description: it.productName,
-        qty: it.qty,
-        unitPrice: it.unitPrice,
-        amount: it.amount
-      }))
-    };
-    setInvoices([newInvoice, ...invoices]);
-
-    return newSub;
-  };
-
-  // Invoice Actions
-  const addInvoice = (inv) => {
-    const newInv = {
-      ...inv,
-      id: `INV-${new Date().getFullYear()}-00${invoices.length + 1}`,
-      invoiceNumber: `INV-${new Date().getFullYear()}-00${invoices.length + 1}`,
-      invoiceDate: inv.invoiceDate || new Date().toISOString().split('T')[0],
-      status: inv.status || 'Draft',
-      amountPaid: Number(inv.amountPaid) || 0,
-      balanceDue: Number(inv.total) - (Number(inv.amountPaid) || 0)
-    };
-    setInvoices([newInv, ...invoices]);
-    return newInv;
-  };
-
-  const updateInvoice = (id, updated) => {
-    setInvoices(invoices.map(inv => inv.id === id ? { ...inv, ...updated } : inv));
-  };
-
-  // Payment Actions
-  const recordPayment = (paymentData) => {
-    const amount = Number(paymentData.amount) || 0;
-    const newPayment = {
-      ...paymentData,
-      id: `PAY-${new Date().getFullYear()}-00${payments.length + 1}`,
-      amount,
-      paymentDate: paymentData.paymentDate || new Date().toISOString().replace('T', ' ').substring(0, 16),
-      transactionRef: paymentData.transactionRef || `UPI/${Math.floor(1000000000 + Math.random() * 9000000000)}/OKAXIS`
-    };
-
-    setPayments([newPayment, ...payments]);
-
-    if (paymentData.invoiceId) {
-      setInvoices(prevInvoices => prevInvoices.map(inv => {
-        if (inv.id === paymentData.invoiceId || inv.invoiceNumber === paymentData.invoiceId) {
-          const currentPaid = Number(inv.amountPaid || 0);
-          const totalPaid = currentPaid + amount;
-          const total = Number(inv.total || 0);
-          const newBalance = Math.max(0, total - totalPaid);
-          const newStatus = newBalance <= 0.01 ? 'Paid' : totalPaid > 0 ? 'Partially Paid' : inv.status;
-          return {
-            ...inv,
-            amountPaid: totalPaid,
-            balanceDue: newBalance,
-            status: newStatus
-          };
-        }
-        return inv;
-      }));
+  // Customer Actions -> Connected to PostgreSQL REST API
+  const addCustomer = async (customer) => {
+    try {
+      const res = await customerService.create(customer);
+      const created = res.data?.data || customer;
+      setCustomers(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD CUSTOMER ERROR]', err);
+      const fallback = {
+        ...customer,
+        id: `CUST-${Date.now()}`,
+        registrationDate: new Date().toISOString().split('T')[0],
+        status: customer.status || 'Active'
+      };
+      setCustomers(prev => [fallback, ...prev]);
+      return fallback;
     }
-
-    return newPayment;
   };
 
-  // Discount Actions
-  const addDiscount = (disc) => {
-    const newDisc = {
-      ...disc,
-      id: `DISC-00${discounts.length + 1}`,
-      value: Number(disc.value) || 0,
-      minPurchase: Number(disc.minPurchase) || 0,
-      minQuantity: Number(disc.minQuantity) || 1,
-      usageLimit: Number(disc.usageLimit) || 100,
-      usageCount: 0,
-      status: 'Active'
-    };
-    setDiscounts([newDisc, ...discounts]);
-    return newDisc;
+  const updateCustomer = async (id, updated) => {
+    try {
+      await customerService.update(id, updated);
+      setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+    } catch (err) {
+      console.error('[UPDATE CUSTOMER ERROR]', err);
+      setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+    }
   };
 
-  const updateDiscount = (id, updated) => {
-    setDiscounts(discounts.map(d => d.id === id ? { ...d, ...updated } : d));
+  const deleteCustomer = async (id) => {
+    try {
+      await customerService.delete(id);
+      setCustomers(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      console.error('[DELETE CUSTOMER ERROR]', err);
+      setCustomers(prev => prev.filter(c => c.id !== id));
+    }
   };
 
-  const deleteDiscount = (id) => {
-    setDiscounts(discounts.filter(d => d.id !== id));
+  // Product Actions -> Connected to PostgreSQL REST API
+  const addProduct = async (prod) => {
+    try {
+      const res = await productService.create(prod);
+      const created = res.data?.data || prod;
+      setProducts(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD PRODUCT ERROR]', err);
+      const fallback = {
+        ...prod,
+        id: `PROD-${Date.now()}`,
+        salesPrice: Number(prod.salesPrice) || 0,
+        costPrice: Number(prod.costPrice) || 0
+      };
+      setProducts(prev => [fallback, ...prev]);
+      return fallback;
+    }
+  };
+
+  const updateProduct = async (id, updated) => {
+    try {
+      await productService.update(id, updated);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    } catch (err) {
+      console.error('[UPDATE PRODUCT ERROR]', err);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    try {
+      await productService.delete(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error('[DELETE PRODUCT ERROR]', err);
+      setProducts(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  // Plan Actions -> Connected to PostgreSQL REST API
+  const addPlan = async (plan) => {
+    try {
+      const res = await planService.create(plan);
+      const created = res.data?.data || plan;
+      setPlans(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD PLAN ERROR]', err);
+      const fallback = { ...plan, id: `PLAN-${Date.now()}` };
+      setPlans(prev => [fallback, ...prev]);
+      return fallback;
+    }
+  };
+
+  const updatePlan = async (id, updated) => {
+    try {
+      await planService.update(id, updated);
+      setPlans(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    } catch (err) {
+      console.error('[UPDATE PLAN ERROR]', err);
+      setPlans(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    }
+  };
+
+  const deletePlan = async (id) => {
+    try {
+      await planService.delete(id);
+      setPlans(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error('[DELETE PLAN ERROR]', err);
+      setPlans(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  // Subscription Actions -> Connected to PostgreSQL REST API
+  const addSubscription = async (subData) => {
+    try {
+      const res = await subscriptionService.create(subData);
+      const created = res.data?.data || subData;
+      setSubscriptions(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD SUBSCRIPTION ERROR]', err);
+      const fallback = {
+        ...subData,
+        id: `SUB-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+        status: subData.status || 'Active'
+      };
+      setSubscriptions(prev => [fallback, ...prev]);
+      return fallback;
+    }
+  };
+
+  const updateSubscription = async (id, updated) => {
+    try {
+      await subscriptionService.update(id, updated);
+      setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s));
+    } catch (err) {
+      console.error('[UPDATE SUBSCRIPTION ERROR]', err);
+      setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, ...updated } : s));
+    }
+  };
+
+  const changeSubscriptionStatus = async (id, status) => {
+    try {
+      await subscriptionService.changeStatus(id, status);
+      setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+    } catch (err) {
+      console.error('[CHANGE SUB STATUS ERROR]', err);
+      setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+    }
+  };
+
+  // Quotation Actions -> Connected to PostgreSQL REST API
+  const addQuotation = async (quote) => {
+    try {
+      const res = await quotationService.create(quote);
+      const created = res.data?.data || quote;
+      setQuotations(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD QUOTATION ERROR]', err);
+      const fallback = { ...quote, id: `QUO-${Date.now()}` };
+      setQuotations(prev => [fallback, ...prev]);
+      return fallback;
+    }
+  };
+
+  const updateQuotation = async (id, updated) => {
+    try {
+      await quotationService.update(id, updated);
+      setQuotations(prev => prev.map(q => q.id === id ? { ...q, ...updated } : q));
+    } catch (err) {
+      console.error('[UPDATE QUOTATION ERROR]', err);
+      setQuotations(prev => prev.map(q => q.id === id ? { ...q, ...updated } : q));
+    }
+  };
+
+  // Convert Quotation into active Subscription
+  const convertQuotationToSubscription = async (quotationId) => {
+    try {
+      const res = await quotationService.convertToSubscription(quotationId);
+      const data = res.data;
+      if (data?.subscription) {
+        setSubscriptions(prev => [data.subscription, ...prev]);
+      }
+      if (data?.invoice) {
+        setInvoices(prev => [data.invoice, ...prev]);
+      }
+      setQuotations(prev => prev.map(q => q.id === quotationId ? { ...q, status: 'Accepted' } : q));
+      return data?.subscription;
+    } catch (err) {
+      console.error('[CONVERT QUOTATION ERROR]', err);
+      const quote = quotations.find(q => q.id === quotationId);
+      if (!quote) return null;
+      setQuotations(prev => prev.map(q => q.id === quotationId ? { ...q, status: 'Accepted' } : q));
+      return null;
+    }
+  };
+
+  // Invoice Actions -> Connected to PostgreSQL REST API
+  const addInvoice = async (inv) => {
+    try {
+      const res = await invoiceService.create(inv);
+      const created = res.data?.data || inv;
+      setInvoices(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD INVOICE ERROR]', err);
+      const fallback = {
+        ...inv,
+        id: `INV-${Date.now()}`,
+        invoiceNumber: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        balanceDue: Number(inv.total || 0)
+      };
+      setInvoices(prev => [fallback, ...prev]);
+      return fallback;
+    }
+  };
+
+  const updateInvoice = async (id, updated) => {
+    try {
+      if (updated.status) {
+        await invoiceService.updateStatus(id, updated.status);
+      }
+      setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updated } : inv));
+    } catch (err) {
+      console.error('[UPDATE INVOICE ERROR]', err);
+      setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updated } : inv));
+    }
+  };
+
+  // Payment Actions -> Connected to PostgreSQL ACID Transaction REST API
+  const recordPayment = async (paymentData) => {
+    try {
+      const payload = {
+        invoiceId: paymentData.invoiceId,
+        amount: Number(paymentData.amount),
+        method: paymentData.paymentMethod || paymentData.method || 'UPI',
+        notes: paymentData.notes || 'Settlement'
+      };
+      const res = await paymentService.recordPayment(payload);
+      const result = res.data;
+
+      if (result?.payment) {
+        setPayments(prev => [result.payment, ...prev]);
+      }
+      if (result?.invoice) {
+        setInvoices(prev => prev.map(inv => inv.id === result.invoice.id ? { ...inv, ...result.invoice, balanceDue: result.invoice.balance } : inv));
+      } else {
+        // Refresh invoices to sync balances accurately
+        invoiceService.getAll().then(r => {
+          if (r.data?.data) setInvoices(r.data.data);
+        }).catch(() => {});
+      }
+      return result?.payment || paymentData;
+    } catch (err) {
+      console.error('[RECORD PAYMENT ERROR]', err);
+      const fallbackPayment = {
+        ...paymentData,
+        id: `PAY-${Date.now()}`,
+        amount: Number(paymentData.amount) || 0,
+        paymentDate: new Date().toISOString().split('T')[0]
+      };
+      setPayments(prev => [fallbackPayment, ...prev]);
+      return fallbackPayment;
+    }
+  };
+
+  // Discount Actions -> Connected to PostgreSQL REST API
+  const addDiscount = async (disc) => {
+    try {
+      const res = await discountService.create(disc);
+      const created = res.data?.data || disc;
+      setDiscounts(prev => [created, ...prev]);
+      return created;
+    } catch (err) {
+      console.error('[ADD DISCOUNT ERROR]', err);
+      const fallback = { ...disc, id: `DISC-${Date.now()}` };
+      setDiscounts(prev => [fallback, ...prev]);
+      return fallback;
+    }
+  };
+
+  const updateDiscount = async (id, updated) => {
+    try {
+      await discountService.update(id, updated);
+      setDiscounts(prev => prev.map(d => d.id === id ? { ...d, ...updated } : d));
+    } catch (err) {
+      console.error('[UPDATE DISCOUNT ERROR]', err);
+      setDiscounts(prev => prev.map(d => d.id === id ? { ...d, ...updated } : d));
+    }
+  };
+
+  const deleteDiscount = async (id) => {
+    try {
+      await discountService.delete(id);
+      setDiscounts(prev => prev.filter(d => d.id !== id));
+    } catch (err) {
+      console.error('[DELETE DISCOUNT ERROR]', err);
+      setDiscounts(prev => prev.filter(d => d.id !== id));
+    }
   };
 
   return (
@@ -407,6 +453,8 @@ export const DataProvider = ({ children }) => {
       user,
       setUser,
       authLoading,
+      dataLoading,
+      refreshAllData,
       logout,
       globalSearch,
       setGlobalSearch,

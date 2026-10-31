@@ -1,102 +1,132 @@
 import express from 'express';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/discounts - List all discount rules
-router.get('/', requireAuth, (req, res, next) => {
+// GET /api/discounts
+router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    const discounts = db.discounts || [];
-    res.json({ success: true, count: discounts.length, data: discounts });
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM discounts ORDER BY created_at DESC');
+
+    const formatted = rows.map(r => ({
+      id: r.id,
+      code: r.code,
+      description: r.description,
+      type: r.discount_type,
+      discountType: r.discount_type,
+      value: Number(r.discount_value),
+      discountValue: Number(r.discount_value),
+      maxUses: r.max_uses,
+      usedCount: r.used_count,
+      validUntil: r.valid_until ? new Date(r.valid_until).toISOString().split('T')[0] : '2026-12-31',
+      status: r.is_active ? 'Active' : 'Inactive',
+      is_active: r.is_active
+    }));
+
+    res.json({ success: true, count: formatted.length, data: formatted });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/discounts - Create new discount (Admin, Staff)
-router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
+// POST /api/discounts
+router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
   try {
-    const { code, type, value, description, validUntil, maxUses } = req.body;
+    const { code, type, discountType, value, discountValue, description, validUntil, maxUses } = req.body;
+    const cleanCode = (code || '').trim().toUpperCase();
+    const val = Number(value !== undefined ? value : discountValue);
 
-    if (!code || value === undefined) {
-      return res.status(400).json({ success: false, message: 'Discount code and value are required.' });
+    if (!cleanCode || isNaN(val)) {
+      return res.status(400).json({ success: false, message: 'Discount code and valid numeric value are required.' });
     }
 
-    const cleanCode = code.trim().toUpperCase();
-    const db = getDb();
-    db.discounts = db.discounts || [];
-
-    const existing = db.discounts.find(d => d.code === cleanCode);
-    if (existing) {
+    const pool = getPool();
+    const { rows: dup } = await pool.query('SELECT id FROM discounts WHERE code = $1', [cleanCode]);
+    if (dup.length > 0) {
       return res.status(409).json({ success: false, message: 'A discount with this coupon code already exists.' });
     }
 
-    const newDiscount = {
-      id: `DISC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      code: cleanCode,
-      type: type === 'Fixed' ? 'Fixed' : 'Percentage',
-      value: Number(value),
-      description: description || '',
-      validUntil: validUntil || '2026-12-31',
-      maxUses: Number(maxUses) || 100,
-      usedCount: 0,
-      status: 'Active',
-      createdAt: new Date().toISOString()
-    };
+    const discId = `DISC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const resolvedType = (type === 'Fixed' || discountType === 'Fixed') ? 'Fixed' : 'Percentage';
 
-    db.discounts.push(newDiscount);
-    saveDb(db);
+    const { rows } = await pool.query(`
+      INSERT INTO discounts (id, code, description, discount_type, discount_value, max_uses, used_count, valid_until, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, 0, $7, true, NOW(), NOW())
+      RETURNING *;
+    `, [
+      discId,
+      cleanCode,
+      description || '',
+      resolvedType,
+      val,
+      Number(maxUses) || 100,
+      validUntil || '2026-12-31'
+    ]);
 
-    logAudit({
+    const r = rows[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'DISCOUNT_CREATED',
-      details: { code: newDiscount.code, value: newDiscount.value },
-      ip: req.ip
+      entityType: 'DISCOUNT',
+      entityId: r.id,
+      details: { code: r.code, value: r.discount_value }
     });
 
-    res.status(201).json({ success: true, message: 'Discount code created successfully.', data: newDiscount });
+    res.status(201).json({
+      success: true,
+      message: 'Discount code created successfully in PostgreSQL.',
+      data: {
+        id: r.id,
+        code: r.code,
+        type: r.discount_type,
+        value: Number(r.discount_value),
+        status: 'Active'
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/discounts/validate - Validate a discount code for customer usage
-router.post('/validate', requireAuth, (req, res, next) => {
+// POST /api/discounts/validate
+router.post('/validate', requireAuth, async (req, res, next) => {
   try {
     const { code, subtotal } = req.body;
     if (!code) {
-      return res.status(400).json({ success: false, message: 'Discount code is required for validation.' });
+      return res.status(400).json({ success: false, message: 'Discount code is required.' });
     }
 
-    const db = getDb();
-    const discount = (db.discounts || []).find(d => d.code === code.trim().toUpperCase());
+    const pool = getPool();
+    const cleanCode = code.trim().toUpperCase();
+    const { rows } = await pool.query('SELECT * FROM discounts WHERE code = $1', [cleanCode]);
 
-    if (!discount) {
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Invalid coupon code.' });
     }
 
-    if (discount.status !== 'Active') {
+    const discount = rows[0];
+    if (!discount.is_active) {
       return res.status(400).json({ success: false, message: 'This discount code is currently inactive.' });
     }
 
-    if (discount.validUntil && new Date(discount.validUntil) < new Date()) {
+    if (discount.valid_until && new Date(discount.valid_until) < new Date()) {
       return res.status(400).json({ success: false, message: 'This discount code has expired.' });
     }
 
-    if (discount.maxUses && discount.usedCount >= discount.maxUses) {
+    if (discount.max_uses && discount.used_count >= discount.max_uses) {
       return res.status(400).json({ success: false, message: 'This discount code has reached its maximum allowed redemptions.' });
     }
 
-    // Calculate deduction
     const baseSubtotal = Number(subtotal) || 0;
     let deduction = 0;
-    if (discount.type === 'Percentage') {
-      deduction = (baseSubtotal * discount.value) / 100;
+    if (discount.discount_type === 'Percentage') {
+      deduction = (baseSubtotal * Number(discount.discount_value)) / 100;
     } else {
-      deduction = discount.value;
+      deduction = Number(discount.discount_value);
     }
     deduction = Math.min(deduction, baseSubtotal);
 
@@ -105,8 +135,8 @@ router.post('/validate', requireAuth, (req, res, next) => {
       message: 'Discount code is valid.',
       data: {
         code: discount.code,
-        type: discount.type,
-        value: discount.value,
+        type: discount.discount_type,
+        value: Number(discount.discount_value),
         deduction: Number(deduction.toFixed(2)),
         finalAmount: Number((baseSubtotal - deduction).toFixed(2))
       }
@@ -116,24 +146,18 @@ router.post('/validate', requireAuth, (req, res, next) => {
   }
 });
 
-// DELETE /api/discounts/:id - Admin only
-router.delete('/:id', requireAuth, requireRoles(['Admin']), (req, res, next) => {
+// DELETE /api/discounts/:id
+router.delete('/:id', requireAuth, requireRoles(['Admin']), async (req, res, next) => {
   try {
-    const db = getDb();
-    const index = (db.discounts || []).findIndex(d => d.id === req.params.id);
-
-    if (index === -1) {
+    const pool = getPool();
+    const { rows } = await pool.query('DELETE FROM discounts WHERE id = $1 RETURNING *', [req.params.id]);
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Discount not found.' });
     }
-
-    const removed = db.discounts.splice(index, 1)[0];
-    saveDb(db);
-
-    res.json({ success: true, message: 'Discount removed.', data: removed });
+    res.json({ success: true, message: 'Discount deleted.', data: rows[0] });
   } catch (err) {
     next(err);
   }
 });
 
 export default router;
-

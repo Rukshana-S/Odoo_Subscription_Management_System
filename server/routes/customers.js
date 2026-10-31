@@ -1,184 +1,262 @@
 import express from 'express';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/customers - List all customers with search and pagination
-router.get('/', requireAuth, (req, res, next) => {
+// GET /api/customers - List customers from PostgreSQL
+router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    let customers = db.customers || [];
+    const pool = getPool();
+    let sql = 'SELECT * FROM customers WHERE 1=1';
+    const params = [];
 
-    // Customer role is restricted to seeing their own customer profile
+    // Role-based isolation
     if (req.user.role === 'Customer' && req.user.customerId) {
-      customers = customers.filter(c => c.id === req.user.customerId || c.email === req.user.email);
+      params.push(req.user.customerId);
+      sql += ` AND id = $${params.length}`;
     }
 
     const { search, status } = req.query;
     if (search) {
-      const q = search.toLowerCase();
-      customers = customers.filter(c => 
-        (c.name && c.name.toLowerCase().includes(q)) ||
-        (c.email && c.email.toLowerCase().includes(q)) ||
-        (c.company && c.company.toLowerCase().includes(q)) ||
-        (c.phone && c.phone.includes(q))
-      );
+      params.push(`%${search.toLowerCase()}%`);
+      sql += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(email) LIKE $${params.length} OR LOWER(company_name) LIKE $${params.length} OR phone LIKE $${params.length})`;
     }
 
-    if (status && status !== 'all') {
-      customers = customers.filter(c => c.status && c.status.toLowerCase() === status.toLowerCase());
+    if (status && status !== 'all' && status !== 'All') {
+      params.push(status);
+      sql += ` AND status = $${params.length}`;
+    }
+
+    sql += ' ORDER BY created_at DESC';
+    const { rows } = await pool.query(sql, params);
+
+    // Format fields for frontend compatibility
+    const formatted = rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      phone: r.phone,
+      company: r.company_name,
+      company_name: r.company_name,
+      address: r.address,
+      city: r.city,
+      state: r.state,
+      pincode: r.pincode,
+      registrationDate: r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : '2026-01-01',
+      status: r.status,
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
+    }));
+
+    res.json({ success: true, count: formatted.length, data: formatted });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/customers/:id - Single customer from PostgreSQL
+router.get('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM customers WHERE id = $1', [req.params.id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Customer record not found.' });
+    }
+
+    const r = rows[0];
+    if (req.user.role === 'Customer' && req.user.customerId !== r.id && req.user.email !== r.email) {
+      return res.status(403).json({ success: false, message: 'Access denied: You can only view your own customer account.' });
     }
 
     res.json({
       success: true,
-      count: customers.length,
-      data: customers
+      data: {
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        company: r.company_name,
+        company_name: r.company_name,
+        address: r.address,
+        city: r.city,
+        state: r.state,
+        pincode: r.pincode,
+        status: r.status,
+        registrationDate: r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : '2026-01-01'
+      }
     });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/customers/:id - Retrieve specific customer
-router.get('/:id', requireAuth, (req, res, next) => {
+// POST /api/customers - Create customer in PostgreSQL
+router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
   try {
-    const db = getDb();
-    const customer = (db.customers || []).find(c => c.id === req.params.id);
-
-    if (!customer) {
-      return res.status(404).json({ success: false, message: 'Customer record not found.' });
-    }
-
-    // Role check: customer can only read their own
-    if (req.user.role === 'Customer' && req.user.customerId !== customer.id && req.user.email !== customer.email) {
-      return res.status(403).json({ success: false, message: 'Access denied: You can only view your own customer account.' });
-    }
-
-    res.json({ success: true, data: customer });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /api/customers - Create new customer (Staff or Admin)
-router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
-  try {
-    const { name, email, phone, company, address, status } = req.body;
+    const { name, email, phone, company, address, city, state, pincode, status } = req.body;
 
     if (!name || !email || !phone) {
       return res.status(400).json({ success: false, message: 'Name, email, and phone number are required fields.' });
     }
 
-    const db = getDb();
-    db.customers = db.customers || [];
+    const pool = getPool();
+    const cleanEmail = email.trim().toLowerCase();
 
-    // Duplicate check
-    const existing = db.customers.find(c => c.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
+    // Check duplicate
+    const { rows: dup } = await pool.query('SELECT id FROM customers WHERE LOWER(email) = $1', [cleanEmail]);
+    if (dup.length > 0) {
       return res.status(409).json({ success: false, message: 'A customer with this email address already exists.' });
     }
 
-    const newCustomer = {
-      id: `CUST-${String(db.customers.length + 1).padStart(3, '0')}`,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim(),
-      company: company || `${name.trim()} Enterprises`,
-      address: address || 'Tamil Nadu, India',
-      registrationDate: new Date().toISOString().split('T')[0],
-      status: status || 'Active',
-      avatar: req.body.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-    };
+    const custId = `CUST-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const custCode = `BL-CUST-${Math.floor(100 + Math.random() * 900)}`;
 
-    db.customers.push(newCustomer);
-    saveDb(db);
+    const { rows: inserted } = await pool.query(`
+      INSERT INTO customers (id, customer_code, name, email, phone, company_name, address, city, state, pincode, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      RETURNING *;
+    `, [
+      custId,
+      custCode,
+      name.trim(),
+      cleanEmail,
+      phone.trim(),
+      company || `${name.trim()} Enterprises`,
+      address || 'Tamil Nadu, India',
+      city || 'Chennai',
+      state || 'Tamil Nadu',
+      pincode || '600001',
+      status || 'Active'
+    ]);
 
-    logAudit({
+    const r = inserted[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'CUSTOMER_CREATED',
-      details: { customerId: newCustomer.id, email: newCustomer.email },
-      ip: req.ip
+      entityType: 'CUSTOMER',
+      entityId: r.id,
+      details: { customerId: r.id, email: r.email }
     });
 
-    res.status(201).json({ success: true, message: 'Customer created successfully.', data: newCustomer });
+    res.status(201).json({
+      success: true,
+      message: 'Customer created successfully.',
+      data: {
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        company: r.company_name,
+        company_name: r.company_name,
+        address: r.address,
+        city: r.city,
+        state: r.state,
+        pincode: r.pincode,
+        status: r.status,
+        registrationDate: new Date().toISOString().split('T')[0]
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// PUT /api/customers/:id - Update customer (Staff or Admin, or Customer self-update)
-router.put('/:id', requireAuth, (req, res, next) => {
+// PUT /api/customers/:id - Update customer in PostgreSQL
+router.put('/:id', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    const index = (db.customers || []).findIndex(c => c.id === req.params.id);
+    const pool = getPool();
+    const { rows: existing } = await pool.query('SELECT * FROM customers WHERE id = $1', [req.params.id]);
 
-    if (index === -1) {
+    if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Customer not found.' });
     }
 
-    const customer = db.customers[index];
-
-    // Customer can only update their own profile
-    if (req.user.role === 'Customer' && req.user.customerId !== customer.id && req.user.email !== customer.email) {
+    const current = existing[0];
+    if (req.user.role === 'Customer' && req.user.customerId !== current.id && req.user.email !== current.email) {
       return res.status(403).json({ success: false, message: 'Forbidden. You cannot edit other customers.' });
     }
 
-    const { name, phone, company, address, status, email } = req.body;
+    const { name, phone, company, address, city, state, pincode, status, email } = req.body;
 
-    // Email collision check if changing email
-    if (email && email.toLowerCase() !== customer.email.toLowerCase()) {
-      const emailTaken = db.customers.some(c => c.id !== customer.id && c.email.toLowerCase() === email.toLowerCase());
-      if (emailTaken) {
+    const newEmail = email ? email.trim().toLowerCase() : current.email;
+    if (email && newEmail !== current.email) {
+      const { rows: dup } = await pool.query('SELECT id FROM customers WHERE LOWER(email) = $1 AND id != $2', [newEmail, current.id]);
+      if (dup.length > 0) {
         return res.status(409).json({ success: false, message: 'This email is already in use by another customer.' });
       }
-      customer.email = email.toLowerCase().trim();
     }
 
-    if (name) customer.name = name.trim();
-    if (phone) customer.phone = phone.trim();
-    if (company) customer.company = company.trim();
-    if (address) customer.address = address.trim();
-    if (status && req.user.role !== 'Customer') customer.status = status; // Only staff/admin can change status
+    const newStatus = (status && req.user.role !== 'Customer') ? status : current.status;
 
-    customer.updatedAt = new Date().toISOString();
-    db.customers[index] = customer;
-    saveDb(db);
+    const { rows: updated } = await pool.query(`
+      UPDATE customers 
+      SET name = $1, email = $2, phone = $3, company_name = $4, address = $5, city = $6, state = $7, pincode = $8, status = $9, updated_at = NOW()
+      WHERE id = $10
+      RETURNING *;
+    `, [
+      name ? name.trim() : current.name,
+      newEmail,
+      phone ? phone.trim() : current.phone,
+      company ? company.trim() : current.company_name,
+      address ? address.trim() : current.address,
+      city || current.city,
+      state || current.state,
+      pincode || current.pincode,
+      newStatus,
+      current.id
+    ]);
 
-    logAudit({
+    const r = updated[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'CUSTOMER_UPDATED',
-      details: { customerId: customer.id },
-      ip: req.ip
+      entityType: 'CUSTOMER',
+      entityId: r.id
     });
 
-    res.json({ success: true, message: 'Customer updated successfully.', data: customer });
+    res.json({
+      success: true,
+      message: 'Customer updated successfully.',
+      data: {
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        company: r.company_name,
+        company_name: r.company_name,
+        address: r.address,
+        city: r.city,
+        state: r.state,
+        pincode: r.pincode,
+        status: r.status
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /api/customers/:id - Admin only
-router.delete('/:id', requireAuth, requireRoles(['Admin']), (req, res, next) => {
+// DELETE /api/customers/:id - Admin only in PostgreSQL
+router.delete('/:id', requireAuth, requireRoles(['Admin']), async (req, res, next) => {
   try {
-    const db = getDb();
-    const index = (db.customers || []).findIndex(c => c.id === req.params.id);
+    const pool = getPool();
+    const { rows } = await pool.query('DELETE FROM customers WHERE id = $1 RETURNING *', [req.params.id]);
 
-    if (index === -1) {
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Customer not found.' });
     }
 
-    const removed = db.customers.splice(index, 1)[0];
-    saveDb(db);
-
-    logAudit({
+    const removed = rows[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'CUSTOMER_DELETED',
-      details: { customerId: removed.id, email: removed.email },
-      ip: req.ip
+      entityType: 'CUSTOMER',
+      entityId: removed.id
     });
 
     res.json({ success: true, message: 'Customer deleted successfully.', data: removed });
@@ -188,4 +266,3 @@ router.delete('/:id', requireAuth, requireRoles(['Admin']), (req, res, next) => 
 });
 
 export default router;
-

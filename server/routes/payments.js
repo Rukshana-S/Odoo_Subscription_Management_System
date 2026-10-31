@@ -1,35 +1,63 @@
 import express from 'express';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/payments - List payments
-router.get('/', requireAuth, (req, res, next) => {
+// GET /api/payments
+router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    let payments = db.payments || [];
+    const pool = getPool();
+    let sql = 'SELECT * FROM payments WHERE 1=1';
+    const params = [];
 
     if (req.user.role === 'Customer' && req.user.customerId) {
-      payments = payments.filter(p => p.customerId === req.user.customerId);
+      params.push(req.user.customerId);
+      sql += ` AND customer_id = $${params.length}`;
     }
 
     const { status, method } = req.query;
-    if (status && status !== 'all') {
-      payments = payments.filter(p => p.status && p.status.toLowerCase() === status.toLowerCase());
+    if (status && status !== 'all' && status !== 'All') {
+      params.push(status);
+      sql += ` AND status = $${params.length}`;
     }
-    if (method && method !== 'all') {
-      payments = payments.filter(p => p.method && p.method.toLowerCase() === method.toLowerCase());
+    if (method && method !== 'all' && method !== 'All') {
+      params.push(method);
+      sql += ` AND payment_method = $${params.length}`;
     }
 
-    res.json({ success: true, count: payments.length, data: payments });
+    sql += ' ORDER BY created_at DESC';
+    const { rows } = await pool.query(sql, params);
+
+    const formatted = rows.map(r => ({
+      id: r.id,
+      receiptNumber: r.receipt_number,
+      invoiceId: r.invoice_id,
+      invoiceNumber: r.invoice_number,
+      customerId: r.customer_id,
+      customerName: r.customer_name,
+      amount: Number(r.amount),
+      method: r.payment_method,
+      paymentMethod: r.payment_method,
+      transactionId: r.transaction_reference,
+      transactionReference: r.transaction_reference,
+      status: r.status,
+      notes: r.notes,
+      paymentDate: r.payment_date ? new Date(r.payment_date).toISOString().split('T')[0] : '2026-01-01'
+    }));
+
+    res.json({ success: true, count: formatted.length, data: formatted });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/payments - Record a payment against an invoice
-router.post('/', requireAuth, (req, res, next) => {
+// POST /api/payments - ACID Transactional payment settlement in PostgreSQL
+router.post('/', requireAuth, async (req, res, next) => {
+  const pool = getPool();
+  const client = await pool.connect();
+
   try {
     const { invoiceId, amount, method, transactionId, reference, notes } = req.body;
 
@@ -42,99 +70,119 @@ router.post('/', requireAuth, (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Payment amount must be greater than zero.' });
     }
 
-    const db = getDb();
-    const invIndex = (db.invoices || []).findIndex(inv => inv.id === invoiceId || inv.invoiceNumber === invoiceId);
+    await client.query('BEGIN');
 
-    if (invIndex === -1) {
-      return res.status(404).json({ success: false, message: 'Invoice associated with this payment was not found.' });
+    // Lock and query invoice for update
+    const { rows: invRows } = await client.query(`
+      SELECT * FROM invoices 
+      WHERE id = $1 OR invoice_number = $1 
+      FOR UPDATE;
+    `, [invoiceId]);
+
+    if (invRows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Invoice not found.' });
     }
 
-    const invoice = db.invoices[invIndex];
+    const invoice = invRows[0];
 
-    // Customer can only pay for their own invoice
-    if (req.user.role === 'Customer' && invoice.customerId !== req.user.customerId) {
+    // Customer ownership verification
+    if (req.user.role === 'Customer' && invoice.customer_id !== req.user.customerId) {
+      await client.query('ROLLBACK');
       return res.status(403).json({ success: false, message: 'Access denied: You can only settle your own invoices.' });
     }
 
-    // Check if invoice is already settled
-    if (invoice.balance <= 0 || invoice.status === 'Paid') {
+    const currentBalance = Number(invoice.balance);
+    if (currentBalance <= 0 || invoice.status === 'Paid') {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: 'This invoice is already fully paid and settled.' });
     }
 
-    if (numAmount > invoice.balance) {
+    if (numAmount > currentBalance) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: `Payment amount (₹${numAmount.toFixed(2)}) exceeds remaining invoice balance (₹${invoice.balance.toFixed(2)}). Overpayments not accepted.`
+        message: `Payment amount (₹${numAmount.toFixed(2)}) exceeds remaining invoice balance (₹${currentBalance.toFixed(2)}). Overpayments not accepted.`
       });
     }
 
-    // Duplicate transaction check
-    const txnRef = transactionId || reference || `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    db.payments = db.payments || [];
-    const duplicateTxn = db.payments.find(p => p.transactionId === txnRef);
-    if (duplicateTxn) {
+    const txnRef = transactionId || reference || `TXN-IN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const { rows: dupTxn } = await client.query('SELECT id FROM payments WHERE transaction_reference = $1', [txnRef]);
+    if (dupTxn.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(409).json({ success: false, message: 'A payment with this transaction ID has already been recorded.' });
     }
 
-    // Update invoice balance and status
-    invoice.paidAmount = Number(((invoice.paidAmount || 0) + numAmount).toFixed(2));
-    invoice.balance = Number((invoice.total - invoice.paidAmount).toFixed(2));
-    if (invoice.balance <= 0) {
-      invoice.status = 'Paid';
-      invoice.balance = 0;
-    } else {
-      invoice.status = 'Partially Paid';
-    }
-    invoice.updatedAt = new Date().toISOString();
-    db.invoices[invIndex] = invoice;
+    // Update Invoice balance and status
+    const newPaidAmount = Number((Number(invoice.paid_amount) + numAmount).toFixed(2));
+    const newBalance = Number((Number(invoice.total) - newPaidAmount).toFixed(2));
+    const newStatus = newBalance <= 0 ? 'Paid' : 'Partially Paid';
 
-    const validMethods = ['UPI', 'Bank Transfer', 'Credit Card', 'Net Banking', 'Cash'];
+    await client.query(`
+      UPDATE invoices
+      SET paid_amount = $1, balance = $2, status = $3, updated_at = NOW()
+      WHERE id = $4;
+    `, [newPaidAmount, Math.max(0, newBalance), newStatus, invoice.id]);
+
+    // Create Payment Record
+    const payId = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const receiptNum = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const validMethods = ['UPI', 'Bank Transfer', 'Credit Card', 'Net Banking', 'Cash', 'Card'];
     const resolvedMethod = method && validMethods.includes(method) ? method : 'UPI';
 
-    const newPayment = {
-      id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      invoiceId: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      customerId: invoice.customerId,
-      customerName: invoice.customerName,
-      amount: numAmount,
-      method: resolvedMethod,
-      transactionId: txnRef,
-      status: 'Success', // Clearly documented as verified transaction record
-      notes: notes || 'Invoice payment settled',
-      paymentDate: new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString()
-    };
+    const { rows: payRows } = await client.query(`
+      INSERT INTO payments (id, receipt_number, invoice_id, invoice_number, customer_id, customer_name, payment_method, amount, transaction_reference, status, notes, payment_date, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Success', $10, CURRENT_DATE, NOW(), NOW())
+      RETURNING *;
+    `, [
+      payId,
+      receiptNum,
+      invoice.id,
+      invoice.invoice_number,
+      invoice.customer_id,
+      invoice.customer_name,
+      resolvedMethod,
+      numAmount,
+      txnRef,
+      notes || 'Invoice settlement'
+    ]);
 
-    db.payments.push(newPayment);
-    saveDb(db);
+    await client.query('COMMIT');
 
-    logAudit({
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'PAYMENT_RECORDED',
-      details: { paymentId: newPayment.id, invoiceId: invoice.id, amount: numAmount, remainingBalance: invoice.balance },
-      ip: req.ip
+      entityType: 'PAYMENT',
+      entityId: payId,
+      details: { invoiceId: invoice.id, amount: numAmount, remainingBalance: Math.max(0, newBalance) }
     });
 
     res.status(201).json({
       success: true,
-      message: invoice.balance === 0 ? 'Invoice fully settled and marked as Paid.' : 'Partial payment recorded successfully.',
+      message: newBalance <= 0 ? 'Invoice fully settled and marked as Paid.' : 'Partial payment recorded successfully in PostgreSQL.',
       data: {
-        payment: newPayment,
+        payment: {
+          id: payRows[0].id,
+          receiptNumber: payRows[0].receipt_number,
+          amount: Number(payRows[0].amount),
+          status: payRows[0].status
+        },
         invoice: {
           id: invoice.id,
-          total: invoice.total,
-          paidAmount: invoice.paidAmount,
-          balance: invoice.balance,
-          status: invoice.status
+          total: Number(invoice.total),
+          paidAmount: newPaidAmount,
+          balance: Math.max(0, newBalance),
+          status: newStatus
         }
       }
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     next(err);
+  } finally {
+    client.release();
   }
 });
 
 export default router;
-

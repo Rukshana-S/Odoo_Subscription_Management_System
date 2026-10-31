@@ -1,56 +1,89 @@
 import express from 'express';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/quotations - List quotations
-router.get('/', requireAuth, (req, res, next) => {
+// GET /api/quotations
+router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    let quotations = db.quotations || [];
+    const pool = getPool();
+    let sql = 'SELECT * FROM quotations WHERE 1=1';
+    const params = [];
 
     if (req.user.role === 'Customer' && req.user.customerId) {
-      quotations = quotations.filter(q => q.customerId === req.user.customerId);
+      params.push(req.user.customerId);
+      sql += ` AND customer_id = $${params.length}`;
     }
 
     const { status } = req.query;
-    if (status && status !== 'all') {
-      quotations = quotations.filter(q => q.status && q.status.toLowerCase() === status.toLowerCase());
+    if (status && status !== 'all' && status !== 'All') {
+      params.push(status);
+      sql += ` AND status = $${params.length}`;
     }
 
-    res.json({ success: true, count: quotations.length, data: quotations });
+    sql += ' ORDER BY created_at DESC';
+    const { rows } = await pool.query(sql, params);
+
+    const formatted = rows.map(r => ({
+      id: r.id,
+      quotationNumber: r.quotation_number,
+      customerId: r.customer_id,
+      customerName: r.customer_name,
+      items: r.items || [],
+      subtotal: Number(r.subtotal),
+      discountCode: r.discount_code,
+      discountAmount: Number(r.discount_amount),
+      taxable: Number(r.taxable),
+      gst: Number(r.gst_amount),
+      gstRate: Number(r.gst_rate),
+      total: Number(r.total),
+      status: r.status,
+      validUntil: r.valid_until ? new Date(r.valid_until).toISOString().split('T')[0] : '2026-12-31',
+      notes: r.notes
+    }));
+
+    res.json({ success: true, count: formatted.length, data: formatted });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/quotations/:id - Single quotation
-router.get('/:id', requireAuth, (req, res, next) => {
+// GET /api/quotations/:id
+router.get('/:id', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    const quotation = (db.quotations || []).find(q => q.id === req.params.id);
-
-    if (!quotation) {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM quotations WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Quotation not found.' });
     }
-
-    if (req.user.role === 'Customer' && quotation.customerId !== req.user.customerId) {
+    const r = rows[0];
+    if (req.user.role === 'Customer' && r.customer_id !== req.user.customerId) {
       return res.status(403).json({ success: false, message: 'Forbidden.' });
     }
-
-    res.json({ success: true, data: quotation });
+    res.json({
+      success: true,
+      data: {
+        id: r.id,
+        quotationNumber: r.quotation_number,
+        customerId: r.customer_id,
+        customerName: r.customer_name,
+        total: Number(r.total),
+        status: r.status
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/quotations - Create quotation (Draft / Sent)
-router.post('/', requireAuth, (req, res, next) => {
+// POST /api/quotations
+router.post('/', requireAuth, async (req, res, next) => {
   try {
     const { customerId, customerName, items, notes, discountCode, discountAmount, validUntil } = req.body;
-
     const effectiveCustomerId = req.user.role === 'Customer' ? req.user.customerId : customerId;
+
     if (!effectiveCustomerId) {
       return res.status(400).json({ success: false, message: 'Customer ID is required.' });
     }
@@ -59,52 +92,68 @@ router.post('/', requireAuth, (req, res, next) => {
       return res.status(400).json({ success: false, message: 'At least one item is required in the quotation.' });
     }
 
-    // Calculate subtotal
     const subtotal = items.reduce((sum, it) => sum + (Number(it.price || 0) * Number(it.quantity || 1)), 0);
     const disc = Number(discountAmount) || 0;
     const taxable = Math.max(0, subtotal - disc);
     const gst = Number((taxable * 0.18).toFixed(2));
     const total = Number((taxable + gst).toFixed(2));
 
-    const db = getDb();
-    db.quotations = db.quotations || [];
+    const pool = getPool();
+    const quotId = `QUOT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const quotNum = `QT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const validity = validUntil || new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
-    const newQuotation = {
-      id: `QUOT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      customerId: effectiveCustomerId,
-      customerName: customerName || req.user.name,
-      items,
+    const { rows } = await pool.query(`
+      INSERT INTO quotations (id, quotation_number, customer_id, customer_name, items, subtotal, discount_code, discount_amount, taxable, gst_rate, gst_amount, total, status, valid_until, notes, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 18.00, $10, $11, 'Sent', $12, $13, NOW(), NOW())
+      RETURNING *;
+    `, [
+      quotId,
+      quotNum,
+      effectiveCustomerId,
+      customerName || req.user.name,
+      JSON.stringify(items),
       subtotal,
-      discountCode: discountCode || null,
-      discountAmount: disc,
+      discountCode || null,
+      disc,
       taxable,
       gst,
       total,
-      notes: notes || '',
-      validUntil: validUntil || new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString().split('T')[0],
-      status: 'Sent',
-      createdAt: new Date().toISOString()
-    };
+      validity,
+      notes || ''
+    ]);
 
-    db.quotations.push(newQuotation);
-    saveDb(db);
-
-    logAudit({
+    const r = rows[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'QUOTATION_CREATED',
-      details: { quotationId: newQuotation.id, customerId: effectiveCustomerId, total },
-      ip: req.ip
+      entityType: 'QUOTATION',
+      entityId: r.id,
+      details: { quotationNumber: r.quotation_number, total: r.total }
     });
 
-    res.status(201).json({ success: true, message: 'Quotation generated successfully.', data: newQuotation });
+    res.status(201).json({
+      success: true,
+      message: 'Quotation generated successfully.',
+      data: {
+        id: r.id,
+        quotationNumber: r.quotation_number,
+        subtotal: Number(r.subtotal),
+        discountAmount: Number(r.discount_amount),
+        taxable: Number(r.taxable),
+        gst: Number(r.gst_amount),
+        total: Number(r.total),
+        status: r.status
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// PATCH /api/quotations/:id/status - Approve or reject quotation
-router.patch('/:id/status', requireAuth, (req, res, next) => {
+// PATCH /api/quotations/:id/status
+router.patch('/:id/status', requireAuth, async (req, res, next) => {
   try {
     const { status } = req.body;
     const allowed = ['Draft', 'Sent', 'Approved', 'Rejected'];
@@ -113,105 +162,99 @@ router.patch('/:id/status', requireAuth, (req, res, next) => {
       return res.status(400).json({ success: false, message: `Status must be one of: ${allowed.join(', ')}` });
     }
 
-    const db = getDb();
-    const index = (db.quotations || []).findIndex(q => q.id === req.params.id);
-
-    if (index === -1) {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM quotations WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Quotation not found.' });
     }
 
-    const quot = db.quotations[index];
-
-    // Customer can only approve or reject their own quotations
-    if (req.user.role === 'Customer' && quot.customerId !== req.user.customerId) {
+    const quot = rows[0];
+    if (req.user.role === 'Customer' && quot.customer_id !== req.user.customerId) {
       return res.status(403).json({ success: false, message: 'Forbidden.' });
     }
 
-    quot.status = status;
-    quot.updatedAt = new Date().toISOString();
-    db.quotations[index] = quot;
-    saveDb(db);
+    const { rows: updated } = await pool.query(`
+      UPDATE quotations 
+      SET status = $1, updated_at = NOW() 
+      WHERE id = $2 
+      RETURNING *;
+    `, [status, quot.id]);
 
-    logAudit({
-      userId: req.user.id,
-      email: req.user.email,
-      action: `QUOTATION_${status.toUpperCase()}`,
-      details: { quotationId: quot.id, status },
-      ip: req.ip
+    const r = updated[0];
+    res.json({
+      success: true,
+      message: `Quotation updated to ${status}.`,
+      data: {
+        id: r.id,
+        status: r.status
+      }
     });
-
-    res.json({ success: true, message: `Quotation updated to ${status}.`, data: quot });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/quotations/:id/convert - Convert approved quotation into subscription
-router.post('/:id/convert', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
-  try {
-    const db = getDb();
-    const index = (db.quotations || []).findIndex(q => q.id === req.params.id);
+// POST /api/quotations/:id/convert
+router.post('/:id/convert', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
+  const pool = getPool();
+  const client = await pool.connect();
 
-    if (index === -1) {
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query('SELECT * FROM quotations WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ success: false, message: 'Quotation not found.' });
     }
 
-    const quot = db.quotations[index];
+    const quot = rows[0];
     if (quot.status === 'Converted') {
-      return res.status(400).json({ success: false, message: 'This quotation has already been converted to a subscription.' });
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Quotation is already converted.' });
     }
 
-    // Check customer exists
-    const customer = (db.customers || []).find(c => c.id === quot.customerId);
-    const startDate = new Date().toISOString().split('T')[0];
+    const subId = `SUB-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const start = new Date().toISOString().split('T')[0];
     const nextBilling = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0];
+    const history = JSON.stringify([{ action: 'CONVERTED_FROM_QUOTATION', quotationId: quot.id, timestamp: new Date().toISOString(), user: req.user.email }]);
 
-    db.subscriptions = db.subscriptions || [];
-    const newSub = {
-      id: `SUB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      customerId: quot.customerId,
-      customerName: quot.customerName || (customer ? customer.name : 'Customer'),
-      planId: quot.items?.[0]?.id || 'PLAN-001',
-      planName: quot.items?.[0]?.name || 'Converted Plan',
-      amount: quot.total,
-      billingInterval: 'Monthly',
-      startDate,
-      nextBillingDate: nextBilling,
-      status: 'Active',
-      convertedFromQuotationId: quot.id,
-      history: [
-        { action: 'CONVERTED_FROM_QUOTATION', quotationId: quot.id, timestamp: new Date().toISOString(), user: req.user.email }
-      ],
-      createdAt: new Date().toISOString()
-    };
+    const { rows: subRows } = await client.query(`
+      INSERT INTO subscriptions (id, customer_id, plan_id, plan_name, customer_name, status, start_date, next_billing_date, billing_interval, quantity, amount, history, converted_from_quotation_id, created_at, updated_at)
+      VALUES ($1, $2, 'PLAN-001', 'Converted Plan', $3, 'Active', $4, $5, 'Monthly', 1, $6, $7, $8, NOW(), NOW())
+      RETURNING *;
+    `, [subId, quot.customer_id, quot.customer_name, start, nextBilling, quot.total, history, quot.id]);
 
-    db.subscriptions.push(newSub);
+    await client.query(`
+      UPDATE quotations 
+      SET status = 'Converted', converted_subscription_id = $1, updated_at = NOW() 
+      WHERE id = $2;
+    `, [subId, quot.id]);
 
-    // Update quotation status to Converted
-    quot.status = 'Converted';
-    quot.convertedSubscriptionId = newSub.id;
-    quot.updatedAt = new Date().toISOString();
-    db.quotations[index] = quot;
+    await client.query('COMMIT');
 
-    saveDb(db);
-
-    logAudit({
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
-      action: 'QUOTATION_CONVERTED_TO_SUBSCRIPTION',
-      details: { quotationId: quot.id, subscriptionId: newSub.id },
-      ip: req.ip
+      action: 'QUOTATION_CONVERTED',
+      entityType: 'QUOTATION',
+      entityId: quot.id,
+      details: { subscriptionId: subId }
     });
 
     res.json({
       success: true,
-      message: 'Quotation successfully converted to an active subscription.',
-      data: { quotation: quot, subscription: newSub }
+      message: 'Quotation successfully converted to active subscription in PostgreSQL.',
+      data: {
+        quotation: { id: quot.id, status: 'Converted' },
+        subscription: { id: subRows[0].id, amount: Number(subRows[0].amount), status: 'Active' }
+      }
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     next(err);
+  } finally {
+    client.release();
   }
 });
 
 export default router;
-

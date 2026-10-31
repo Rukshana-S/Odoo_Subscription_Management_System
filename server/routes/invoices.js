@@ -1,55 +1,90 @@
 import express from 'express';
-import { getDb, saveDb, logAudit } from '../db.js';
+import { getPool } from '../db/pool.js';
+import { logAudit } from '../db.js';
 import { requireAuth, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/invoices - List invoices
-router.get('/', requireAuth, (req, res, next) => {
+// GET /api/invoices
+router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    let invoices = db.invoices || [];
+    const pool = getPool();
+    let sql = 'SELECT * FROM invoices WHERE 1=1';
+    const params = [];
 
     if (req.user.role === 'Customer' && req.user.customerId) {
-      invoices = invoices.filter(inv => inv.customerId === req.user.customerId);
+      params.push(req.user.customerId);
+      sql += ` AND customer_id = $${params.length}`;
     }
 
     const { status, customerId } = req.query;
-    if (status && status !== 'all') {
-      invoices = invoices.filter(inv => inv.status && inv.status.toLowerCase() === status.toLowerCase());
+    if (status && status !== 'all' && status !== 'All') {
+      params.push(status);
+      sql += ` AND status = $${params.length}`;
     }
     if (customerId && req.user.role !== 'Customer') {
-      invoices = invoices.filter(inv => inv.customerId === customerId);
+      params.push(customerId);
+      sql += ` AND customer_id = $${params.length}`;
     }
 
-    res.json({ success: true, count: invoices.length, data: invoices });
+    sql += ' ORDER BY created_at DESC';
+    const { rows } = await pool.query(sql, params);
+
+    const formatted = rows.map(r => ({
+      id: r.id,
+      invoiceNumber: r.invoice_number,
+      customerId: r.customer_id,
+      customerName: r.customer_name,
+      subscriptionId: r.subscription_id,
+      subtotal: Number(r.subtotal),
+      discount: Number(r.discount),
+      taxable: Number(r.taxable),
+      gst: Number(r.gst_amount),
+      gstRate: Number(r.gst_rate),
+      total: Number(r.total),
+      paidAmount: Number(r.paid_amount),
+      balance: Number(r.balance),
+      balanceDue: Number(r.balance),
+      issueDate: r.issue_date ? new Date(r.issue_date).toISOString().split('T')[0] : '2026-01-01',
+      dueDate: r.due_date ? new Date(r.due_date).toISOString().split('T')[0] : '2026-01-15',
+      status: r.status
+    }));
+
+    res.json({ success: true, count: formatted.length, data: formatted });
   } catch (err) {
     next(err);
   }
 });
 
-// GET /api/invoices/:id - Single invoice
-router.get('/:id', requireAuth, (req, res, next) => {
+// GET /api/invoices/:id
+router.get('/:id', requireAuth, async (req, res, next) => {
   try {
-    const db = getDb();
-    const invoice = (db.invoices || []).find(inv => inv.id === req.params.id);
-
-    if (!invoice) {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Invoice not found.' });
     }
-
-    if (req.user.role === 'Customer' && invoice.customerId !== req.user.customerId) {
+    const r = rows[0];
+    if (req.user.role === 'Customer' && r.customer_id !== req.user.customerId) {
       return res.status(403).json({ success: false, message: 'Forbidden.' });
     }
-
-    res.json({ success: true, data: invoice });
+    res.json({
+      success: true,
+      data: {
+        id: r.id,
+        invoiceNumber: r.invoice_number,
+        total: Number(r.total),
+        balance: Number(r.balance),
+        status: r.status
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/invoices - Generate invoice (Staff or Admin)
-router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
+// POST /api/invoices
+router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
   try {
     const { customerId, customerName, subscriptionId, subtotal, discount, dueDate, invoiceNumber } = req.body;
 
@@ -64,60 +99,70 @@ router.post('/', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next)
 
     const numDiscount = Number(discount) || 0;
     const taxable = Math.max(0, numSubtotal - numDiscount);
-    const gst = Number((taxable * 0.18).toFixed(2));
-    const total = Number((taxable + gst).toFixed(2));
+    const gstAmount = Number((taxable * 0.18).toFixed(2));
+    const total = Number((taxable + gstAmount).toFixed(2));
 
-    const db = getDb();
-    db.invoices = db.invoices || [];
+    const pool = getPool();
+    const invId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const invNum = invoiceNumber || `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const due = dueDate || new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
-    // Duplicate check if subscriptionId and cycle match
-    const issueDate = new Date().toISOString().split('T')[0];
-    const generatedInvoiceNumber = invoiceNumber || `INV-${new Date().getFullYear()}-${String(db.invoices.length + 1).padStart(4, '0')}`;
-
-    // Prevent duplicate invoice reference
-    const duplicate = db.invoices.find(inv => inv.invoiceNumber === generatedInvoiceNumber);
-    if (duplicate) {
+    // Check duplicate
+    const { rows: dup } = await pool.query('SELECT id FROM invoices WHERE invoice_number = $1', [invNum]);
+    if (dup.length > 0) {
       return res.status(409).json({ success: false, message: 'An invoice with this invoice number already exists.' });
     }
 
-    const newInvoice = {
-      id: `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      invoiceNumber: generatedInvoiceNumber,
+    const { rows } = await pool.query(`
+      INSERT INTO invoices (id, invoice_number, customer_id, subscription_id, customer_name, subtotal, discount, taxable, gst_rate, gst_amount, total, paid_amount, balance, issue_date, due_date, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 18.00, $9, $10, 0.00, $10, CURRENT_DATE, $11, 'Unpaid', NOW(), NOW())
+      RETURNING *;
+    `, [
+      invId,
+      invNum,
       customerId,
-      customerName: customerName || 'Valued Customer',
-      subscriptionId: subscriptionId || null,
-      subtotal: numSubtotal,
-      discount: numDiscount,
+      subscriptionId || null,
+      customerName || 'Valued Customer',
+      numSubtotal,
+      numDiscount,
       taxable,
-      gst,
+      gstAmount,
       total,
-      paidAmount: 0,
-      balance: total,
-      issueDate,
-      dueDate: dueDate || new Date(Date.now() + 15 * 24 * 3600 * 1000).toISOString().split('T')[0],
-      status: 'Unpaid',
-      createdAt: new Date().toISOString()
-    };
+      due
+    ]);
 
-    db.invoices.push(newInvoice);
-    saveDb(db);
-
-    logAudit({
+    const r = rows[0];
+    await logAudit({
       userId: req.user.id,
       email: req.user.email,
       action: 'INVOICE_GENERATED',
-      details: { invoiceId: newInvoice.id, invoiceNumber: newInvoice.invoiceNumber, total },
-      ip: req.ip
+      entityType: 'INVOICE',
+      entityId: r.id,
+      details: { invoiceNumber: r.invoice_number, total: r.total }
     });
 
-    res.status(201).json({ success: true, message: 'Invoice generated successfully.', data: newInvoice });
+    res.status(201).json({
+      success: true,
+      message: 'Invoice generated successfully in PostgreSQL.',
+      data: {
+        id: r.id,
+        invoiceNumber: r.invoice_number,
+        subtotal: Number(r.subtotal),
+        discount: Number(r.discount),
+        taxable: Number(r.taxable),
+        gst: Number(r.gst_amount),
+        total: Number(r.total),
+        balance: Number(r.balance),
+        status: r.status
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
-// PATCH /api/invoices/:id/status - Update invoice status manually
-router.patch('/:id/status', requireAuth, requireRoles(['Admin', 'Staff']), (req, res, next) => {
+// PATCH /api/invoices/:id/status
+router.patch('/:id/status', requireAuth, requireRoles(['Admin', 'Staff']), async (req, res, next) => {
   try {
     const { status } = req.body;
     const allowed = ['Unpaid', 'Paid', 'Partially Paid', 'Overdue', 'Cancelled'];
@@ -126,28 +171,40 @@ router.patch('/:id/status', requireAuth, requireRoles(['Admin', 'Staff']), (req,
       return res.status(400).json({ success: false, message: `Status must be one of: ${allowed.join(', ')}` });
     }
 
-    const db = getDb();
-    const index = (db.invoices || []).findIndex(inv => inv.id === req.params.id);
-
-    if (index === -1) {
+    const pool = getPool();
+    const { rows } = await pool.query('SELECT * FROM invoices WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Invoice not found.' });
     }
 
-    const inv = db.invoices[index];
-    inv.status = status;
+    const inv = rows[0];
+    let newPaid = inv.paid_amount;
+    let newBalance = inv.balance;
     if (status === 'Paid') {
-      inv.paidAmount = inv.total;
-      inv.balance = 0;
+      newPaid = inv.total;
+      newBalance = 0.00;
     }
-    inv.updatedAt = new Date().toISOString();
-    db.invoices[index] = inv;
-    saveDb(db);
 
-    res.json({ success: true, message: `Invoice status updated to ${status}.`, data: inv });
+    const { rows: updated } = await pool.query(`
+      UPDATE invoices
+      SET status = $1, paid_amount = $2, balance = $3, updated_at = NOW()
+      WHERE id = $4
+      RETURNING *;
+    `, [status, newPaid, newBalance, inv.id]);
+
+    const r = updated[0];
+    res.json({
+      success: true,
+      message: `Invoice status updated to ${status}.`,
+      data: {
+        id: r.id,
+        status: r.status,
+        balance: Number(r.balance)
+      }
+    });
   } catch (err) {
     next(err);
   }
 });
 
 export default router;
-
