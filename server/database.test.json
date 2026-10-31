@@ -13,7 +13,7 @@
       "accountStatus": "Active",
       "createdAt": "2026-10-31T05:47:20.296Z",
       "updatedAt": "2026-10-31T05:47:20.296Z",
-      "lastLoginAt": "2026-10-31T06:20:58.614Z"
+      "lastLoginAt": "2026-10-31T09:36:01.066Z"
     },
     {
       "id": "USER-STAFF-01",
@@ -179,6 +179,36 @@
       "createdAt": "2026-10-31T06:20:58.715Z",
       "updatedAt": "2026-10-31T06:20:59.829Z",
       "lastLoginAt": "2026-10-31T06:20:59.768Z"
+    },
+    {
+      "id": "USER-1793438890962",
+      "name": "Kavin",
+      "fullName": "Kavin Raj",
+      "email": "kavin_unique_1793438890396@chennaitech.in",
+      "phone": "+91 98401 23456",
+      "passwordHash": "$2b$10$.MJxgKZijsMRebAtEpB6Uu2t51UKfVVIU0ulzSMzNK0CETABakDvK",
+      "role": "Customer",
+      "customerId": "CUST-286",
+      "emailVerified": false,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T09:28:10.962Z",
+      "updatedAt": "2026-10-31T09:28:13.327Z",
+      "lastLoginAt": "2026-10-31T09:28:13.211Z"
+    },
+    {
+      "id": "USER-1793439361170",
+      "name": "Kavin",
+      "fullName": "Kavin Raj",
+      "email": "kavin_unique_1793439360910@chennaitech.in",
+      "phone": "+91 98401 23456",
+      "passwordHash": "$2b$10$hk1iH0MaICT8SAQDAXuRX.1mKHJOxtg/aImXToVuJ5gDkH8CcWdW.",
+      "role": "Customer",
+      "customerId": "CUST-457",
+      "emailVerified": false,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T09:36:01.170Z",
+      "updatedAt": "2026-10-31T09:36:02.274Z",
+      "lastLoginAt": "2026-10-31T09:36:02.217Z"
     }
   ],
   "refreshTokens": [
@@ -231,16 +261,28 @@
       "expiresAt": "2026-11-07T06:14:57.243Z"
     },
     {
-      "userId": "USER-ADMIN-01",
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItQURNSU4tMDEiLCJpYXQiOjE3OTM0Mjc2NTgsImV4cCI6MTc5NDAzMjQ1OH0.X0w8aF1sbx-4QLP2kkOvYmP6o8DgB5bBcb4RhArXzHk",
-      "createdAt": "2026-10-31T06:20:58.613Z",
-      "expiresAt": "2026-11-07T06:20:58.614Z"
-    },
-    {
       "userId": "USER-1793427658715",
       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItMTc5MzQyNzY1ODcxNSIsImlhdCI6MTc5MzQyNzY1OSwiZXhwIjoxNzk0MDMyNDU5fQ.hkQQG4BmpBC4Q8VLIII2Ys7qw2F5-NoejR8SFq3vDwk",
       "createdAt": "2026-10-31T06:20:59.768Z",
       "expiresAt": "2026-11-07T06:20:59.768Z"
+    },
+    {
+      "userId": "USER-1793438890962",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItMTc5MzQzODg5MDk2MiIsImlhdCI6MTc5MzQzODg5MywiZXhwIjoxNzk0MDQzNjkzfQ.vCxNYWkDncOutldmCq4egl6e4ZITTr-u6IzIwCmRdHQ",
+      "createdAt": "2026-10-31T09:28:13.211Z",
+      "expiresAt": "2026-11-07T09:28:13.211Z"
+    },
+    {
+      "userId": "USER-ADMIN-01",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItQURNSU4tMDEiLCJpYXQiOjE3OTM0MzkzNjEsImV4cCI6MTc5NDA0NDE2MX0.ByzURSlPklnWITLqiYT34fJH6I8B5j7XnlmzYAnFQyI",
+      "createdAt": "2026-10-31T09:36:01.066Z",
+      "expiresAt": "2026-11-07T09:36:01.066Z"
+    },
+    {
+      "userId": "USER-1793439361170",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItMTc5MzQzOTM2MTE3MCIsImlhdCI6MTc5MzQzOTM2MiwiZXhwIjoxNzk0MDQ0MTYyfQ.pLbxt0HcDB3DCwyPPAvnAOQny9BbOF2KoC8DIlcrfb0",
+      "createdAt": "2026-10-31T09:36:02.217Z",
+      "expiresAt": "2026-11-07T09:36:02.217Z"
     }
   ],
   "passwordResetTokens": [],
@@ -298,6 +340,18 @@
       "email": "test_kavin_1793427658471@chennaitech.in",
       "token": "102e950e3b1067d23a108cc28a2950ead78167a3b0911c69ece8f277af595255",
       "expiresAt": "2026-11-01T06:20:58.715Z"
+    },
+    {
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "token": "ef0996cd9097d3259e480a30104c650e942be2be09b52d3902ae041142578e05",
+      "expiresAt": "2026-11-01T09:28:10.962Z"
+    },
+    {
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "token": "584f552416967d2e07d20b49395c41db4d78b65fd5500c682dfa7f0919228b06",
+      "expiresAt": "2026-11-01T09:36:01.170Z"
     }
   ],
   "auditLogs": [
@@ -2670,6 +2724,686 @@
       },
       "ip": "127.0.0.1",
       "timestamp": "2026-10-31T06:21:00.850Z"
+    },
+    {
+      "id": "AUDIT-1793438890754-708",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Admin"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:10.754Z"
+    },
+    {
+      "id": "AUDIT-1793438890969-21",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "USER_REGISTRATION",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:10.969Z"
+    },
+    {
+      "id": "AUDIT-1793438891263-63",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:11.264Z"
+    },
+    {
+      "id": "AUDIT-1793438891472-262",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:11.472Z"
+    },
+    {
+      "id": "AUDIT-1793438891888-957",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "CHANGE_PASSWORD_FAILED_INCORRECT_CURRENT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:11.888Z"
+    },
+    {
+      "id": "AUDIT-1793438892358-911",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "CHANGE_PASSWORD_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:12.358Z"
+    },
+    {
+      "id": "AUDIT-1793438892544-147",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:12.544Z"
+    },
+    {
+      "id": "AUDIT-1793438892735-902",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:12.735Z"
+    },
+    {
+      "id": "AUDIT-1793438892977-627",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "PASSWORD_RESET_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:12.978Z"
+    },
+    {
+      "id": "AUDIT-1793438893220-372",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:13.220Z"
+    },
+    {
+      "id": "AUDIT-1793438893293-732",
+      "userId": "USER-1793438890962",
+      "email": "test_kavin_1793438890390@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:13.293Z"
+    },
+    {
+      "id": "AUDIT-1793438893333-766",
+      "userId": "USER-1793438890962",
+      "email": "kavin_unique_1793438890396@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:13.333Z"
+    },
+    {
+      "id": "AUDIT-1793438894300-252",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "CUSTOMER_CREATED",
+      "details": {
+        "customerId": "CUST-001",
+        "email": "nila.new@chennaitech.in"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.300Z"
+    },
+    {
+      "id": "AUDIT-1793438894369-881",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "CUSTOMER_UPDATED",
+      "details": {
+        "customerId": "CUST-001"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.369Z"
+    },
+    {
+      "id": "AUDIT-1793438894406-391",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "CUSTOMER_DELETED",
+      "details": {
+        "customerId": "CUST-001",
+        "email": "nila.new@chennaitech.in"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.406Z"
+    },
+    {
+      "id": "AUDIT-1793438894497-386",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PRODUCT_CREATED",
+      "details": {
+        "productId": "PROD-007",
+        "name": "Automated Billing Microservice"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.497Z"
+    },
+    {
+      "id": "AUDIT-1793438894568-776",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "PRODUCT_UPDATED",
+      "details": {
+        "productId": "PROD-007"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.568Z"
+    },
+    {
+      "id": "AUDIT-1793438894636-409",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PLAN_CREATED",
+      "details": {
+        "planId": "PLAN-007",
+        "name": "Growth Quarterly"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.636Z"
+    },
+    {
+      "id": "AUDIT-1793438894676-502",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PLAN_UPDATED",
+      "details": {
+        "planId": "PLAN-007"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.676Z"
+    },
+    {
+      "id": "AUDIT-1793438894715-96",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_CREATED",
+      "details": {
+        "subscriptionId": "SUB-1793438894709-566",
+        "customerId": "CUST-001"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.715Z"
+    },
+    {
+      "id": "AUDIT-1793438894763-629",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_STATUS_UPDATED",
+      "details": {
+        "subscriptionId": "SUB-1793438894709-566",
+        "previousStatus": "Active",
+        "newStatus": "Paused"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.763Z"
+    },
+    {
+      "id": "AUDIT-1793438894799-785",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_STATUS_UPDATED",
+      "details": {
+        "subscriptionId": "SUB-1793438894709-566",
+        "previousStatus": "Paused",
+        "newStatus": "Active"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.799Z"
+    },
+    {
+      "id": "AUDIT-1793438894836-889",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_STATUS_UPDATED",
+      "details": {
+        "subscriptionId": "SUB-1793438894709-566",
+        "previousStatus": "Active",
+        "newStatus": "Cancelled"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.836Z"
+    },
+    {
+      "id": "AUDIT-1793438894910-714",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "QUOTATION_CREATED",
+      "details": {
+        "quotationId": "QUOT-1793438894902-242",
+        "customerId": "CUST-001",
+        "total": 10620
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.910Z"
+    },
+    {
+      "id": "AUDIT-1793438894966-83",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "QUOTATION_APPROVED",
+      "details": {
+        "quotationId": "QUOT-1793438894902-242",
+        "status": "Approved"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:14.966Z"
+    },
+    {
+      "id": "AUDIT-1793438895006-392",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "QUOTATION_CONVERTED_TO_SUBSCRIPTION",
+      "details": {
+        "quotationId": "QUOT-1793438894902-242",
+        "subscriptionId": "SUB-1793438894998-967"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:15.006Z"
+    },
+    {
+      "id": "AUDIT-1793438895049-658",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "INVOICE_GENERATED",
+      "details": {
+        "invoiceId": "INV-1793438895042-698",
+        "invoiceNumber": "INV-2026-0007",
+        "total": 5310
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:15.049Z"
+    },
+    {
+      "id": "AUDIT-1793438895098-184",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PAYMENT_RECORDED",
+      "details": {
+        "paymentId": "PAY-1793438895092-139",
+        "invoiceId": "INV-1793438895042-698",
+        "amount": 2000,
+        "remainingBalance": 3310
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:15.098Z"
+    },
+    {
+      "id": "AUDIT-1793438895165-507",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PAYMENT_RECORDED",
+      "details": {
+        "paymentId": "PAY-1793438895159-758",
+        "invoiceId": "INV-1793438895042-698",
+        "amount": 3310,
+        "remainingBalance": 0
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:15.166Z"
+    },
+    {
+      "id": "AUDIT-1793438895205-662",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "DISCOUNT_CREATED",
+      "details": {
+        "code": "TESTDISC_1793438894151",
+        "value": 25
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:28:15.205Z"
+    },
+    {
+      "id": "AUDIT-1793439361070-862",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Admin"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.070Z"
+    },
+    {
+      "id": "AUDIT-1793439361175-68",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "USER_REGISTRATION",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.175Z"
+    },
+    {
+      "id": "AUDIT-1793439361309-549",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.309Z"
+    },
+    {
+      "id": "AUDIT-1793439361406-946",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.406Z"
+    },
+    {
+      "id": "AUDIT-1793439361577-4",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "CHANGE_PASSWORD_FAILED_INCORRECT_CURRENT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.577Z"
+    },
+    {
+      "id": "AUDIT-1793439361793-557",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "CHANGE_PASSWORD_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.793Z"
+    },
+    {
+      "id": "AUDIT-1793439361887-832",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.887Z"
+    },
+    {
+      "id": "AUDIT-1793439361974-537",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:01.974Z"
+    },
+    {
+      "id": "AUDIT-1793439362110-265",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "PASSWORD_RESET_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.110Z"
+    },
+    {
+      "id": "AUDIT-1793439362221-666",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.221Z"
+    },
+    {
+      "id": "AUDIT-1793439362259-626",
+      "userId": "USER-1793439361170",
+      "email": "test_kavin_1793439360908@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.259Z"
+    },
+    {
+      "id": "AUDIT-1793439362278-577",
+      "userId": "USER-1793439361170",
+      "email": "kavin_unique_1793439360910@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.278Z"
+    },
+    {
+      "id": "AUDIT-1793439362795-354",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "CUSTOMER_CREATED",
+      "details": {
+        "customerId": "CUST-001",
+        "email": "nila.new@chennaitech.in"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.795Z"
+    },
+    {
+      "id": "AUDIT-1793439362834-704",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "CUSTOMER_UPDATED",
+      "details": {
+        "customerId": "CUST-001"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.834Z"
+    },
+    {
+      "id": "AUDIT-1793439362855-111",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "CUSTOMER_DELETED",
+      "details": {
+        "customerId": "CUST-001",
+        "email": "nila.new@chennaitech.in"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.855Z"
+    },
+    {
+      "id": "AUDIT-1793439362909-432",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PRODUCT_CREATED",
+      "details": {
+        "productId": "PROD-008",
+        "name": "Automated Billing Microservice"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.909Z"
+    },
+    {
+      "id": "AUDIT-1793439362943-161",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "PRODUCT_UPDATED",
+      "details": {
+        "productId": "PROD-008"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.943Z"
+    },
+    {
+      "id": "AUDIT-1793439362984-424",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PLAN_CREATED",
+      "details": {
+        "planId": "PLAN-008",
+        "name": "Growth Quarterly"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:02.984Z"
+    },
+    {
+      "id": "AUDIT-1793439363006-551",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PLAN_UPDATED",
+      "details": {
+        "planId": "PLAN-008"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.006Z"
+    },
+    {
+      "id": "AUDIT-1793439363028-288",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_CREATED",
+      "details": {
+        "subscriptionId": "SUB-1793439363024-24",
+        "customerId": "CUST-001"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.028Z"
+    },
+    {
+      "id": "AUDIT-1793439363052-261",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_STATUS_UPDATED",
+      "details": {
+        "subscriptionId": "SUB-1793439363024-24",
+        "previousStatus": "Active",
+        "newStatus": "Paused"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.052Z"
+    },
+    {
+      "id": "AUDIT-1793439363078-803",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_STATUS_UPDATED",
+      "details": {
+        "subscriptionId": "SUB-1793439363024-24",
+        "previousStatus": "Paused",
+        "newStatus": "Active"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.078Z"
+    },
+    {
+      "id": "AUDIT-1793439363098-202",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "SUBSCRIPTION_STATUS_UPDATED",
+      "details": {
+        "subscriptionId": "SUB-1793439363024-24",
+        "previousStatus": "Active",
+        "newStatus": "Cancelled"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.098Z"
+    },
+    {
+      "id": "AUDIT-1793439363135-917",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "QUOTATION_CREATED",
+      "details": {
+        "quotationId": "QUOT-1793439363131-17",
+        "customerId": "CUST-001",
+        "total": 10620
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.135Z"
+    },
+    {
+      "id": "AUDIT-1793439363164-326",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "QUOTATION_APPROVED",
+      "details": {
+        "quotationId": "QUOT-1793439363131-17",
+        "status": "Approved"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.164Z"
+    },
+    {
+      "id": "AUDIT-1793439363185-67",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "QUOTATION_CONVERTED_TO_SUBSCRIPTION",
+      "details": {
+        "quotationId": "QUOT-1793439363131-17",
+        "subscriptionId": "SUB-1793439363181-244"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.185Z"
+    },
+    {
+      "id": "AUDIT-1793439363209-437",
+      "userId": "USER-STAFF-01",
+      "email": "priya@brightloop.in",
+      "action": "INVOICE_GENERATED",
+      "details": {
+        "invoiceId": "INV-1793439363204-591",
+        "invoiceNumber": "INV-2026-0008",
+        "total": 5310
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.209Z"
+    },
+    {
+      "id": "AUDIT-1793439363231-198",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PAYMENT_RECORDED",
+      "details": {
+        "paymentId": "PAY-1793439363227-68",
+        "invoiceId": "INV-1793439363204-591",
+        "amount": 2000,
+        "remainingBalance": 3310
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.231Z"
+    },
+    {
+      "id": "AUDIT-1793439363272-117",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "PAYMENT_RECORDED",
+      "details": {
+        "paymentId": "PAY-1793439363268-723",
+        "invoiceId": "INV-1793439363204-591",
+        "amount": 3310,
+        "remainingBalance": 0
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.272Z"
+    },
+    {
+      "id": "AUDIT-1793439363294-950",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "DISCOUNT_CREATED",
+      "details": {
+        "code": "TESTDISC_1793439362721",
+        "value": 25
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T09:36:03.294Z"
     }
   ],
   "customers": [],
@@ -2745,6 +3479,30 @@
       "features": [],
       "createdAt": "2026-10-31T06:21:00.442Z",
       "updatedAt": "2026-10-31T06:21:00.473Z"
+    },
+    {
+      "id": "PROD-007",
+      "name": "Automated Billing Microservice",
+      "category": "Software",
+      "price": 1800,
+      "billingInterval": "Monthly",
+      "description": "",
+      "status": "Active",
+      "features": [],
+      "createdAt": "2026-10-31T09:28:14.491Z",
+      "updatedAt": "2026-10-31T09:28:14.557Z"
+    },
+    {
+      "id": "PROD-008",
+      "name": "Automated Billing Microservice",
+      "category": "Software",
+      "price": 1800,
+      "billingInterval": "Monthly",
+      "description": "",
+      "status": "Active",
+      "features": [],
+      "createdAt": "2026-10-31T09:36:02.905Z",
+      "updatedAt": "2026-10-31T09:36:02.939Z"
     }
   ],
   "plans": [
@@ -2825,6 +3583,32 @@
       "status": "Active",
       "createdAt": "2026-10-31T06:21:00.514Z",
       "updatedAt": "2026-10-31T06:21:00.535Z"
+    },
+    {
+      "id": "PLAN-007",
+      "name": "Growth Quarterly",
+      "code": "GROWTH_QUARTERLY",
+      "price": 4200,
+      "billingInterval": "Quarterly",
+      "description": "",
+      "features": [],
+      "popular": false,
+      "status": "Active",
+      "createdAt": "2026-10-31T09:28:14.630Z",
+      "updatedAt": "2026-10-31T09:28:14.669Z"
+    },
+    {
+      "id": "PLAN-008",
+      "name": "Growth Quarterly",
+      "code": "GROWTH_QUARTERLY",
+      "price": 4200,
+      "billingInterval": "Quarterly",
+      "description": "",
+      "features": [],
+      "popular": false,
+      "status": "Active",
+      "createdAt": "2026-10-31T09:36:02.981Z",
+      "updatedAt": "2026-10-31T09:36:03.001Z"
     }
   ],
   "subscriptions": [
@@ -3205,6 +3989,132 @@
         }
       ],
       "createdAt": "2026-10-31T06:21:00.739Z"
+    },
+    {
+      "id": "SUB-1793438894709-566",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "planId": "PLAN-001",
+      "planName": "Standard Plan",
+      "amount": 2500,
+      "billingInterval": "Monthly",
+      "startDate": "2026-10-31",
+      "nextBillingDate": "2026-12-01",
+      "status": "Cancelled",
+      "history": [
+        {
+          "action": "CREATED",
+          "timestamp": "2026-10-31T09:28:14.709Z",
+          "user": "arul@brightloop.in"
+        },
+        {
+          "action": "STATUS_CHANGE_PAUSED",
+          "from": "Active",
+          "to": "Paused",
+          "timestamp": "2026-10-31T09:28:14.757Z",
+          "user": "arul@brightloop.in"
+        },
+        {
+          "action": "STATUS_CHANGE_ACTIVE",
+          "from": "Paused",
+          "to": "Active",
+          "timestamp": "2026-10-31T09:28:14.792Z",
+          "user": "arul@brightloop.in"
+        },
+        {
+          "action": "STATUS_CHANGE_CANCELLED",
+          "from": "Active",
+          "to": "Cancelled",
+          "timestamp": "2026-10-31T09:28:14.830Z",
+          "user": "arul@brightloop.in"
+        }
+      ],
+      "createdAt": "2026-10-31T09:28:14.709Z"
+    },
+    {
+      "id": "SUB-1793438894998-967",
+      "customerId": "CUST-001",
+      "customerName": "Priya",
+      "planId": "PLAN-001",
+      "planName": "Cloud Package",
+      "amount": 10620,
+      "billingInterval": "Monthly",
+      "startDate": "2026-10-31",
+      "nextBillingDate": "2026-11-30",
+      "status": "Active",
+      "convertedFromQuotationId": "QUOT-1793438894902-242",
+      "history": [
+        {
+          "action": "CONVERTED_FROM_QUOTATION",
+          "quotationId": "QUOT-1793438894902-242",
+          "timestamp": "2026-10-31T09:28:14.998Z",
+          "user": "arul@brightloop.in"
+        }
+      ],
+      "createdAt": "2026-10-31T09:28:14.998Z"
+    },
+    {
+      "id": "SUB-1793439363024-24",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "planId": "PLAN-001",
+      "planName": "Standard Plan",
+      "amount": 2500,
+      "billingInterval": "Monthly",
+      "startDate": "2026-10-31",
+      "nextBillingDate": "2026-12-01",
+      "status": "Cancelled",
+      "history": [
+        {
+          "action": "CREATED",
+          "timestamp": "2026-10-31T09:36:03.024Z",
+          "user": "arul@brightloop.in"
+        },
+        {
+          "action": "STATUS_CHANGE_PAUSED",
+          "from": "Active",
+          "to": "Paused",
+          "timestamp": "2026-10-31T09:36:03.047Z",
+          "user": "arul@brightloop.in"
+        },
+        {
+          "action": "STATUS_CHANGE_ACTIVE",
+          "from": "Paused",
+          "to": "Active",
+          "timestamp": "2026-10-31T09:36:03.074Z",
+          "user": "arul@brightloop.in"
+        },
+        {
+          "action": "STATUS_CHANGE_CANCELLED",
+          "from": "Active",
+          "to": "Cancelled",
+          "timestamp": "2026-10-31T09:36:03.095Z",
+          "user": "arul@brightloop.in"
+        }
+      ],
+      "createdAt": "2026-10-31T09:36:03.024Z"
+    },
+    {
+      "id": "SUB-1793439363181-244",
+      "customerId": "CUST-001",
+      "customerName": "Priya",
+      "planId": "PLAN-001",
+      "planName": "Cloud Package",
+      "amount": 10620,
+      "billingInterval": "Monthly",
+      "startDate": "2026-10-31",
+      "nextBillingDate": "2026-11-30",
+      "status": "Active",
+      "convertedFromQuotationId": "QUOT-1793439363131-17",
+      "history": [
+        {
+          "action": "CONVERTED_FROM_QUOTATION",
+          "quotationId": "QUOT-1793439363131-17",
+          "timestamp": "2026-10-31T09:36:03.181Z",
+          "user": "arul@brightloop.in"
+        }
+      ],
+      "createdAt": "2026-10-31T09:36:03.181Z"
     }
   ],
   "quotations": [
@@ -3351,6 +4261,54 @@
       "createdAt": "2026-10-31T06:21:00.667Z",
       "updatedAt": "2026-10-31T06:21:00.739Z",
       "convertedSubscriptionId": "SUB-1793427660739-339"
+    },
+    {
+      "id": "QUOT-1793438894902-242",
+      "customerId": "CUST-001",
+      "customerName": "Priya",
+      "items": [
+        {
+          "name": "Cloud Package",
+          "price": 10000,
+          "quantity": 1
+        }
+      ],
+      "subtotal": 10000,
+      "discountCode": null,
+      "discountAmount": 1000,
+      "taxable": 9000,
+      "gst": 1620,
+      "total": 10620,
+      "notes": "",
+      "validUntil": "2026-11-15",
+      "status": "Converted",
+      "createdAt": "2026-10-31T09:28:14.902Z",
+      "updatedAt": "2026-10-31T09:28:14.998Z",
+      "convertedSubscriptionId": "SUB-1793438894998-967"
+    },
+    {
+      "id": "QUOT-1793439363131-17",
+      "customerId": "CUST-001",
+      "customerName": "Priya",
+      "items": [
+        {
+          "name": "Cloud Package",
+          "price": 10000,
+          "quantity": 1
+        }
+      ],
+      "subtotal": 10000,
+      "discountCode": null,
+      "discountAmount": 1000,
+      "taxable": 9000,
+      "gst": 1620,
+      "total": 10620,
+      "notes": "",
+      "validUntil": "2026-11-15",
+      "status": "Converted",
+      "createdAt": "2026-10-31T09:36:03.131Z",
+      "updatedAt": "2026-10-31T09:36:03.181Z",
+      "convertedSubscriptionId": "SUB-1793439363181-244"
     }
   ],
   "invoices": [
@@ -3467,6 +4425,44 @@
       "status": "Paid",
       "createdAt": "2026-10-31T06:21:00.761Z",
       "updatedAt": "2026-10-31T06:21:00.824Z"
+    },
+    {
+      "id": "INV-1793438895042-698",
+      "invoiceNumber": "INV-2026-0007",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "subscriptionId": null,
+      "subtotal": 5000,
+      "discount": 500,
+      "taxable": 4500,
+      "gst": 810,
+      "total": 5310,
+      "paidAmount": 5310,
+      "balance": 0,
+      "issueDate": "2026-10-31",
+      "dueDate": "2026-11-15",
+      "status": "Paid",
+      "createdAt": "2026-10-31T09:28:15.042Z",
+      "updatedAt": "2026-10-31T09:28:15.159Z"
+    },
+    {
+      "id": "INV-1793439363204-591",
+      "invoiceNumber": "INV-2026-0008",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "subscriptionId": null,
+      "subtotal": 5000,
+      "discount": 500,
+      "taxable": 4500,
+      "gst": 810,
+      "total": 5310,
+      "paidAmount": 5310,
+      "balance": 0,
+      "issueDate": "2026-10-31",
+      "dueDate": "2026-11-15",
+      "status": "Paid",
+      "createdAt": "2026-10-31T09:36:03.205Z",
+      "updatedAt": "2026-10-31T09:36:03.268Z"
     }
   ],
   "payments": [
@@ -3637,6 +4633,62 @@
       "notes": "Invoice payment settled",
       "paymentDate": "2026-10-31",
       "createdAt": "2026-10-31T06:21:00.825Z"
+    },
+    {
+      "id": "PAY-1793438895092-139",
+      "invoiceId": "INV-1793438895042-698",
+      "invoiceNumber": "INV-2026-0007",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "amount": 2000,
+      "method": "UPI",
+      "transactionId": "TXN-1793438895092-29",
+      "status": "Success",
+      "notes": "Invoice payment settled",
+      "paymentDate": "2026-10-31",
+      "createdAt": "2026-10-31T09:28:15.092Z"
+    },
+    {
+      "id": "PAY-1793438895159-758",
+      "invoiceId": "INV-1793438895042-698",
+      "invoiceNumber": "INV-2026-0007",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "amount": 3310,
+      "method": "Bank Transfer",
+      "transactionId": "TXN-1793438895159-746",
+      "status": "Success",
+      "notes": "Invoice payment settled",
+      "paymentDate": "2026-10-31",
+      "createdAt": "2026-10-31T09:28:15.159Z"
+    },
+    {
+      "id": "PAY-1793439363227-68",
+      "invoiceId": "INV-1793439363204-591",
+      "invoiceNumber": "INV-2026-0008",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "amount": 2000,
+      "method": "UPI",
+      "transactionId": "TXN-1793439363227-36",
+      "status": "Success",
+      "notes": "Invoice payment settled",
+      "paymentDate": "2026-10-31",
+      "createdAt": "2026-10-31T09:36:03.227Z"
+    },
+    {
+      "id": "PAY-1793439363268-723",
+      "invoiceId": "INV-1793439363204-591",
+      "invoiceNumber": "INV-2026-0008",
+      "customerId": "CUST-001",
+      "customerName": "Kavin",
+      "amount": 3310,
+      "method": "Bank Transfer",
+      "transactionId": "TXN-1793439363268-485",
+      "status": "Success",
+      "notes": "Invoice payment settled",
+      "paymentDate": "2026-10-31",
+      "createdAt": "2026-10-31T09:36:03.268Z"
     }
   ],
   "discounts": [
@@ -3687,6 +4739,30 @@
       "usedCount": 0,
       "status": "Active",
       "createdAt": "2026-10-31T06:21:00.846Z"
+    },
+    {
+      "id": "DISC-1793438895198-669",
+      "code": "TESTDISC_1793438894151",
+      "type": "Percentage",
+      "value": 25,
+      "description": "",
+      "validUntil": "2026-12-31",
+      "maxUses": 100,
+      "usedCount": 0,
+      "status": "Active",
+      "createdAt": "2026-10-31T09:28:15.198Z"
+    },
+    {
+      "id": "DISC-1793439363289-505",
+      "code": "TESTDISC_1793439362721",
+      "type": "Percentage",
+      "value": 25,
+      "description": "",
+      "validUntil": "2026-12-31",
+      "maxUses": 100,
+      "usedCount": 0,
+      "status": "Active",
+      "createdAt": "2026-10-31T09:36:03.289Z"
     }
   ]
 }
