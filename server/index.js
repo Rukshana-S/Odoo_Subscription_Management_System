@@ -10,12 +10,13 @@ import bcrypt from 'bcryptjs';
 import { initDatabase, getDb, saveDb } from './db.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-// Initialize DB and seed Arul (Admin), Priya/Dharani (Staff), and Kavin (Customer)
+// Initialize DB and ensure teammate seed data is respected
 initDatabase();
 const seedDefaultAccounts = async () => {
   const db = getDb();
@@ -73,7 +74,7 @@ const seedDefaultAccounts = async () => {
       }
     );
     saveDb(db);
-    console.log('[BRIGHTLOOP SERVER] Default accounts seeded: Arul (Admin), Priya (Staff), Kavin (Customer)');
+    console.log('[BRIGHTLOOP SERVER] Default accounts initialized: Arul (Admin), Priya (Staff), Kavin (Customer)');
   }
 };
 seedDefaultAccounts();
@@ -87,11 +88,11 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Rate Limiting on Authentication endpoints to prevent brute-force
+// Rate Limiting on Authentication endpoints to prevent brute-force attacks
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 mins
-  max: 100, // Limit each IP to 100 auth attempts per window
-  message: { success: false, message: 'Too many login attempts from this IP. Please try again after 15 minutes.' },
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, message: 'Too many requests from this IP. Please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -104,7 +105,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'UP', service: 'Brightloop Authentication & Core API', timestamp: new Date() });
 });
 
+// Centralized error handler
+app.use(errorHandler);
+
 app.listen(PORT, () => {
   console.log(`[BRIGHTLOOP SERVER] REST API Backend running on http://localhost:${PORT}`);
 });
-
