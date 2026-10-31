@@ -303,3 +303,4 @@ The backend service coordinates with your teammate's existing database layer:
   - `emailVerified`: Boolean status
   - `accountStatus`: Status (`Active` | `Suspended`)
   - `createdAt`, `updatedAt`, `lastLoginAt`
+

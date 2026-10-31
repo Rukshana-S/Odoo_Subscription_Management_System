@@ -4,7 +4,12 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_FILE = path.join(__dirname, 'database.json');
+
+// Allows isolated test database file when running in test mode
+const isTestEnv = process.env.NODE_ENV === 'test';
+const DB_FILE = isTestEnv
+  ? path.join(__dirname, 'database.test.json')
+  : path.join(__dirname, 'database.json');
 
 // Initialize schema if not present
 export const initDatabase = () => {
@@ -32,6 +37,7 @@ export const saveDb = (data) => {
 
 export const logAudit = ({ userId, email, action, details, ip }) => {
   const db = getDb();
+  db.auditLogs = db.auditLogs || [];
   db.auditLogs.push({
     id: `AUDIT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     userId: userId || null,
@@ -43,4 +49,3 @@ export const logAudit = ({ userId, email, action, details, ip }) => {
   });
   saveDb(db);
 };
-

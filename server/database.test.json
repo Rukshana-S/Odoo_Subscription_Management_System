@@ -1,0 +1,497 @@
+{
+  "users": [
+    {
+      "id": "USER-ADMIN-01",
+      "name": "Arul",
+      "fullName": "Arul Selvan",
+      "email": "arul@brightloop.in",
+      "phone": "+91 98400 11223",
+      "passwordHash": "$2b$10$AZ5OvVl39ZJxI8LMLtXEcenrEkcx4JfsiuKT186DywTGSuFBj3.tO",
+      "role": "Admin",
+      "customerId": null,
+      "emailVerified": true,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T05:47:20.296Z",
+      "updatedAt": "2026-10-31T05:47:20.296Z",
+      "lastLoginAt": "2026-10-31T05:49:06.739Z"
+    },
+    {
+      "id": "USER-STAFF-01",
+      "name": "Priya",
+      "fullName": "Priya Dharshini",
+      "email": "priya@brightloop.in",
+      "phone": "+91 94430 55667",
+      "passwordHash": "$2b$10$AZ5OvVl39ZJxI8LMLtXEceLipvaS47aB2OHvE6n4WFp7VLCQr2ufW",
+      "role": "Staff",
+      "customerId": null,
+      "emailVerified": true,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T05:47:20.296Z",
+      "updatedAt": "2026-10-31T05:47:20.296Z",
+      "lastLoginAt": null
+    },
+    {
+      "id": "USER-CUST-01",
+      "name": "Kavin",
+      "fullName": "Kavin Kumar",
+      "email": "kavin@chennaitech.in",
+      "phone": "+91 98401 23456",
+      "passwordHash": "$2b$10$AZ5OvVl39ZJxI8LMLtXEce4FXQezQ.xdwWndRjDLfzm9EAX0EZIti",
+      "role": "Customer",
+      "customerId": "CUST-001",
+      "emailVerified": true,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T05:47:20.296Z",
+      "updatedAt": "2026-10-31T05:47:20.296Z",
+      "lastLoginAt": null
+    },
+    {
+      "id": "USER-1793425640529",
+      "name": "Kavin",
+      "fullName": "Kavin Raj",
+      "email": "kavin_unique_1793425640079@chennaitech.in",
+      "phone": "+91 98401 23456",
+      "passwordHash": "$2b$10$uVYfG2GdXPX5DeLx7zSfdOauCA6Ucnw/DTVPCiQ9TM1bCU9ciCc8q",
+      "role": "Customer",
+      "customerId": "CUST-779",
+      "emailVerified": false,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T05:47:20.529Z",
+      "updatedAt": "2026-10-31T05:47:21.620Z",
+      "lastLoginAt": "2026-10-31T05:47:21.571Z"
+    },
+    {
+      "id": "USER-1793425706654",
+      "name": "Kavin",
+      "fullName": "Kavin Raj",
+      "email": "kavin_unique_1793425706397@chennaitech.in",
+      "phone": "+91 98401 23456",
+      "passwordHash": "$2b$10$vY.pSPPx4t9OIVDQfkb/weVAMYZf28gkORD20y3dtEv7.t6VCzBbe",
+      "role": "Customer",
+      "customerId": "CUST-416",
+      "emailVerified": false,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T05:48:26.654Z",
+      "updatedAt": "2026-10-31T05:48:27.713Z",
+      "lastLoginAt": "2026-10-31T05:48:27.660Z"
+    },
+    {
+      "id": "USER-1793425746837",
+      "name": "Kavin",
+      "fullName": "Kavin Raj",
+      "email": "kavin_unique_1793425746572@chennaitech.in",
+      "phone": "+91 98401 23456",
+      "passwordHash": "$2b$10$Jt2XLlBBB/SY6dwDTFu2s.ON8EyvijfUMwTCFjiBHKSckH7YtOACy",
+      "role": "Customer",
+      "customerId": "CUST-983",
+      "emailVerified": false,
+      "accountStatus": "Active",
+      "createdAt": "2026-10-31T05:49:06.837Z",
+      "updatedAt": "2026-10-31T05:49:07.936Z",
+      "lastLoginAt": "2026-10-31T05:49:07.881Z"
+    }
+  ],
+  "refreshTokens": [
+    {
+      "userId": "USER-1793425640529",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItMTc5MzQyNTY0MDUyOSIsImlhdCI6MTc5MzQyNTY0MSwiZXhwIjoxNzk0MDMwNDQxfQ.D00BLvJv0Tje4SCIdWDYietw_8ooMFiKO7fmnsmYYVk",
+      "createdAt": "2026-10-31T05:47:21.571Z",
+      "expiresAt": "2026-11-07T05:47:21.571Z"
+    },
+    {
+      "userId": "USER-1793425706654",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItMTc5MzQyNTcwNjY1NCIsImlhdCI6MTc5MzQyNTcwNywiZXhwIjoxNzk0MDMwNTA3fQ.fp6g-8W4a8SdTwmquInhh4_4yDA4DiC-0FZCTGsZl5E",
+      "createdAt": "2026-10-31T05:48:27.660Z",
+      "expiresAt": "2026-11-07T05:48:27.660Z"
+    },
+    {
+      "userId": "USER-ADMIN-01",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItQURNSU4tMDEiLCJpYXQiOjE3OTM0MjU3NDYsImV4cCI6MTc5NDAzMDU0Nn0.Wn2BlYcScBKIjS3NJCcPRkeC7QQBGupg8u1qR1In_bs",
+      "createdAt": "2026-10-31T05:49:06.739Z",
+      "expiresAt": "2026-11-07T05:49:06.739Z"
+    },
+    {
+      "userId": "USER-1793425746837",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVItMTc5MzQyNTc0NjgzNyIsImlhdCI6MTc5MzQyNTc0NywiZXhwIjoxNzk0MDMwNTQ3fQ.X509x2icYyUaEHGTEbyd8-UpJS22VtJoE2g4NTxhaog",
+      "createdAt": "2026-10-31T05:49:07.881Z",
+      "expiresAt": "2026-11-07T05:49:07.881Z"
+    }
+  ],
+  "passwordResetTokens": [],
+  "emailVerificationTokens": [
+    {
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "token": "693ba6f32a358deb29c58691545606512c43912311e293cf927d2e2f1c13dccc",
+      "expiresAt": "2026-11-01T05:47:20.529Z"
+    },
+    {
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "token": "3562be7638a683893422477b9dce6e0331add5e48ce20e09eb0e8f4bedc38a13",
+      "expiresAt": "2026-11-01T05:48:26.655Z"
+    },
+    {
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "token": "f61231ba90c7fd294cfc3e7546d2dc503d27197afccdee431d4d20cb1274795a",
+      "expiresAt": "2026-11-01T05:49:06.837Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "AUDIT-1793425640439-492",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Admin"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:20.439Z"
+    },
+    {
+      "id": "AUDIT-1793425640531-601",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "USER_REGISTRATION",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:20.531Z"
+    },
+    {
+      "id": "AUDIT-1793425640690-422",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:20.690Z"
+    },
+    {
+      "id": "AUDIT-1793425640776-241",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:20.776Z"
+    },
+    {
+      "id": "AUDIT-1793425640961-953",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "CHANGE_PASSWORD_FAILED_INCORRECT_CURRENT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:20.961Z"
+    },
+    {
+      "id": "AUDIT-1793425641180-502",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "CHANGE_PASSWORD_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.180Z"
+    },
+    {
+      "id": "AUDIT-1793425641264-912",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.264Z"
+    },
+    {
+      "id": "AUDIT-1793425641347-89",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.347Z"
+    },
+    {
+      "id": "AUDIT-1793425641467-230",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "PASSWORD_RESET_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.467Z"
+    },
+    {
+      "id": "AUDIT-1793425641573-852",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.573Z"
+    },
+    {
+      "id": "AUDIT-1793425641608-181",
+      "userId": "USER-1793425640529",
+      "email": "test_kavin_1793425640077@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.608Z"
+    },
+    {
+      "id": "AUDIT-1793425641623-885",
+      "userId": "USER-1793425640529",
+      "email": "kavin_unique_1793425640079@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:47:21.623Z"
+    },
+    {
+      "id": "AUDIT-1793425706555-476",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Admin"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:26.555Z"
+    },
+    {
+      "id": "AUDIT-1793425706656-375",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "USER_REGISTRATION",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:26.656Z"
+    },
+    {
+      "id": "AUDIT-1793425706796-159",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:26.796Z"
+    },
+    {
+      "id": "AUDIT-1793425706875-821",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:26.875Z"
+    },
+    {
+      "id": "AUDIT-1793425707039-645",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "CHANGE_PASSWORD_FAILED_INCORRECT_CURRENT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.039Z"
+    },
+    {
+      "id": "AUDIT-1793425707248-430",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "CHANGE_PASSWORD_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.248Z"
+    },
+    {
+      "id": "AUDIT-1793425707334-529",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.334Z"
+    },
+    {
+      "id": "AUDIT-1793425707428-533",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.428Z"
+    },
+    {
+      "id": "AUDIT-1793425707556-906",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "PASSWORD_RESET_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.556Z"
+    },
+    {
+      "id": "AUDIT-1793425707662-628",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.662Z"
+    },
+    {
+      "id": "AUDIT-1793425707699-968",
+      "userId": "USER-1793425706654",
+      "email": "test_kavin_1793425706395@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.699Z"
+    },
+    {
+      "id": "AUDIT-1793425707715-833",
+      "userId": "USER-1793425706654",
+      "email": "kavin_unique_1793425706397@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:48:27.715Z"
+    },
+    {
+      "id": "AUDIT-1793425746741-172",
+      "userId": "USER-ADMIN-01",
+      "email": "arul@brightloop.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Admin"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:06.741Z"
+    },
+    {
+      "id": "AUDIT-1793425746839-353",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "USER_REGISTRATION",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:06.839Z"
+    },
+    {
+      "id": "AUDIT-1793425746970-689",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:06.970Z"
+    },
+    {
+      "id": "AUDIT-1793425747060-3",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.060Z"
+    },
+    {
+      "id": "AUDIT-1793425747246-189",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "CHANGE_PASSWORD_FAILED_INCORRECT_CURRENT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.246Z"
+    },
+    {
+      "id": "AUDIT-1793425747460-949",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "CHANGE_PASSWORD_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.460Z"
+    },
+    {
+      "id": "AUDIT-1793425747549-24",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "FAILED_LOGIN_ATTEMPT",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.549Z"
+    },
+    {
+      "id": "AUDIT-1793425747637-845",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.637Z"
+    },
+    {
+      "id": "AUDIT-1793425747769-726",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "PASSWORD_RESET_SUCCESS",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.769Z"
+    },
+    {
+      "id": "AUDIT-1793425747883-159",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "USER_LOGIN_SUCCESS",
+      "details": {
+        "role": "Customer"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.883Z"
+    },
+    {
+      "id": "AUDIT-1793425747922-257",
+      "userId": "USER-1793425746837",
+      "email": "test_kavin_1793425746570@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.922Z"
+    },
+    {
+      "id": "AUDIT-1793425747938-722",
+      "userId": "USER-1793425746837",
+      "email": "kavin_unique_1793425746572@chennaitech.in",
+      "action": "PROFILE_UPDATED",
+      "details": {},
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-31T05:49:07.938Z"
+    }
+  ]
+}

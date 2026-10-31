@@ -76,6 +76,14 @@ export const authService = {
     const res = await apiClient.post('/auth/verify-email', data);
     return res.data;
   },
+  changePassword: async (data) => {
+    const res = await apiClient.patch('/auth/change-password', data);
+    return res.data;
+  },
+  updateProfile: async (data) => {
+    const res = await apiClient.put('/auth/profile', data);
+    return res.data;
+  },
   getCurrentUser: async () => {
     const res = await apiClient.get('/auth/me');
     return res.data;
